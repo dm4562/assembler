@@ -10,10 +10,10 @@ __name__ = 'CS-3220'
 BIT_WIDTH = 32
 
 # Primary opcode width (bits)
-PRIMARY_OPCODE_WIDTH = 4
+PRIMARY_OPCODE_WIDTH = 6
 
 # Secondary opcode width (bits)
-SECONDARY_OPCODE_WIDTH = 4
+SECONDARY_OPCODE_WIDTH = 8
 
 # Register width (bits)
 REGISTERS = {
@@ -36,4 +36,9 @@ REGISTERS = {
     'RA'    :   15
 }
 
-__RE_BLANK__ = re.compile(r'^\s*(!.*)?$')
+_RE_BLANK_ = re.compile(r'^\s*(;.*)?$')
+_RE_PARTS_ = re.compile(r'^\s*((?P<Label>\w+):)?\s*((?P<Opcode>\.?[\w]+)(?P<Operands>[^;]*))?(;.*)?')
+_RE_HEX_ = re.compile(r'0x[A-z0-9]*')
+_RE_IMM_ = re.compile(r'^\s*(?P<RD>\w+?)\s*,\s*(?P<RS>\w+?)\s*,\s*(?P<Offset>\S+?)\s*$')
+_RE_R_ = re.compile(r'^\s*(?P<RD>\w+?)\s*,\s*(?P<RS>\w+?)\s*,\s*(?P<RT>\S+?)\s*$')
+_RE_MEM_JMP_ = re.compile(r'^\s*(?P<RT>\w+?)\s*,\s*(?P<Offset>\S+?)\s*\((?P<RS>\w+?)\)\s*$')
