@@ -42,7 +42,12 @@ REGISTERS = {
     'ra':   15
 }
 
-SYMBOL_TABLE, ALIASES = {}, {}
+SYMBOL_TABLE = {}
+
+ALIASES = {
+    'and': 'and_',
+    'or': 'or_'
+}
 
 __R_BLANK_BITS__ = BIT_WIDTH - (PRIMARY_OPCODE_WIDTH + SECONDARY_OPCODE_WIDTH + 3 * REGISTER_WIDTH)
 __IMM_BLANK_BITS__ = BIT_WIDTH - (PRIMARY_OPCODE_WIDTH + IMMEDIATE_WIDTH + 2 * REGISTER_WIDTH)
@@ -229,31 +234,97 @@ def __parse_mem_jmp__(operands, pc=None):
 
     return ''.join(result_list)
 
-class add(Instruction):
-    @staticmethod
-    def opcode():
-        return (add.__primary_opcode__(), add.__secondary_opcode__())
+class RInstruction(Instruction):
+    @classmethod
+    def opcode(cls):
+        return (cls.primary_opcode(), RInstruction.secondary_opcode())
 
-    @staticmethod
-    def size():
+    @classmethod
+    def size(cls):
         return 1
 
-    @staticmethod
-    def __primary_opcode__():
+    @classmethod
+    def primary_opcode(cls):
         return 0;
+    
+    @classmethod
+    def secondary_opcode(cls):
+        raise NotImplementedError()
 
-    @staticmethod
-    def __secondary_opcode__():
-        return 2 ** 5
-
-    @staticmethod
-    def binary(operands, **kwargs):
-        opcode = __zero_extend__(bin(add.__primary_opcode__()), PRIMARY_OPCODE_WIDTH) + __zero_extend__(bin(add.__secondary_opcode__()), SECONDARY_OPCODE_WIDTH)
+    @classmethod
+    def binary(cls, operands, **kwargs):
+        opcode = __zero_extend__(bin(cls.primary_opcode()), PRIMARY_OPCODE_WIDTH) + __zero_extend__(bin(cls.secondary_opcode()), SECONDARY_OPCODE_WIDTH)
         length = PRIMARY_OPCODE_WIDTH + SECONDARY_OPCODE_WIDTH + __R_BLANK_BITS__
         opcode = __zero_extend__(opcode, length, pad_right=True)
         operands = __parse_r__(operands)
         return [opcode + operands]
 
-    @staticmethod
-    def hex(operands, **kwargs):
-        return [__bin2hex(instr) for instr in add.binary(operands, **kwargs)]
+    @classmethod
+    def hex(cls, operands, **kwargs):
+        return [__bin2hex__(instr) for instr in cls.binary(operands, **kwargs)]
+
+class eq(RInstruction):
+    @classmethod
+    def secondary_opcode(cls):
+        return int('08', 16)
+
+class lt(RInstruction):
+    @classmethod
+    def secondary_opcode(cls):
+        return int('09', 16)
+
+class le(RInstruction):
+    @classmethod
+    def secondary_opcode(cls):
+        return int('0a', 16)
+
+class ne(RInstruction):
+    @classmethod
+    def secondary_opcode(cls):
+        return int('0b', 16)
+
+class add(RInstruction):
+    @classmethod
+    def secondary_opcode(cls):
+        return int('20', 16)
+
+class and_(RInstruction):
+    @classmethod
+    def secondary_opcode(cls):
+        return int('24', 16)
+
+class or_(RInstruction):
+    @classmethod
+    def secondary_opcode(cls):
+        return int('25', 16)
+
+class xor(RInstruction):
+    @classmethod
+    def secondary_opcode(cls):
+        return int('26', 16)
+
+class sub(RInstruction):
+    @classmethod
+    def secondary_opcode(cls):
+        return int('28', 16)
+
+class nand(RInstruction):
+    @classmethod
+    def secondary_opcode(cls):
+        return int('2c', 16)
+
+class nxor(RInstruction):
+    @classmethod
+    def secondary_opcode(cls):
+        return int('2e', 16)
+
+class rshf(RInstruction):
+    @classmethod
+    def secondary_opcode(cls):
+        return int('30', 16)
+
+class lshf(RInstruction):
+    @classmethod
+    def secondary_opcode(cls):
+        return int('31', 16)
+
