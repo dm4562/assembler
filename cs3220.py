@@ -110,7 +110,7 @@ def __bin2hex__(binary):
     return '%0*X' % ((len(binary) + 3) // 4, int(binary, 2))
 
 
-def __hex2bin(__hexadecimal):
+def __hex2bin__(hexadecimal):
     return bin(int(hexadecimal, 16))[2:]
 
 
@@ -121,7 +121,7 @@ def __dec2bin__(num, bits):
 
 def __parse_value__(offset, size, pc=None):
     bin_offset = None
-
+    # print(offset, pc)
     if type(offset) is str:
         if pc is not None and offset in SYMBOL_TABLE:
             offset = SYMBOL_TABLE[offset] - (pc + 1)
@@ -354,25 +354,75 @@ class beq(IInstruction):
     def opcode(cls):
         return int('001000', 2)
 
+    @classmethod
+    def binary(cls, operands, **kwargs):
+        assert('pc' in kwargs)  # Sanity check
+
+        opcode = __zero_extend__(bin(cls.opcode()), PRIMARY_OPCODE_WIDTH)
+        length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
+        opcode = __zero_extend__(opcode, length, pad_right=True)
+        operands = __parse_imm__(operands, pc=kwargs['pc'])
+        return [opcode + operands]
+
 class blt(IInstruction):
     @classmethod
     def opcode(cls):
         return int('001001', 2)
+
+    @classmethod
+    def binary(cls, operands, **kwargs):
+        assert('pc' in kwargs)  # Sanity check
+
+        opcode = __zero_extend__(bin(cls.opcode()), PRIMARY_OPCODE_WIDTH)
+        length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
+        opcode = __zero_extend__(opcode, length, pad_right=True)
+        operands = __parse_imm__(operands, pc=kwargs['pc'])
+        return [opcode + operands]
 
 class ble(IInstruction):
     @classmethod
     def opcode(cls):
         return int('001010', 2)
 
+    @classmethod
+    def binary(cls, operands, **kwargs):
+        assert('pc' in kwargs)  # Sanity check
+
+        opcode = __zero_extend__(bin(cls.opcode()), PRIMARY_OPCODE_WIDTH)
+        length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
+        opcode = __zero_extend__(opcode, length, pad_right=True)
+        operands = __parse_imm__(operands, pc=kwargs['pc'])
+        return [opcode + operands]
+
 class bne(IInstruction):
     @classmethod
     def opcode(cls):
         return int('001011', 2)
 
+    @classmethod
+    def binary(cls, operands, **kwargs):
+        assert('pc' in kwargs)  # Sanity check
+
+        opcode = __zero_extend__(bin(cls.opcode()), PRIMARY_OPCODE_WIDTH)
+        length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
+        opcode = __zero_extend__(opcode, length, pad_right=True)
+        operands = __parse_imm__(operands, pc=kwargs['pc'])
+        return [opcode + operands]
+
 class beq(IInstruction):
     @classmethod
     def opcode(cls):
         return int('001000', 2)
+
+    @classmethod
+    def binary(cls, operands, **kwargs):
+        assert('pc' in kwargs)  # Sanity check
+
+        opcode = __zero_extend__(bin(cls.opcode()), PRIMARY_OPCODE_WIDTH)
+        length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
+        opcode = __zero_extend__(opcode, length, pad_right=True)
+        operands = __parse_imm__(operands, pc=kwargs['pc'])
+        return [opcode + operands]
 
 class addi(IInstruction):
     @classmethod
