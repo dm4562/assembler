@@ -44,18 +44,18 @@ REGISTERS = {
 
 SYMBOL_TABLE, ALIASES = {}, {}
 
-__R_BLANK_BITS = BIT_WIDTH - (PRIMARY_OPCODE_WIDTH + SECONDARY_OPCODE_WIDTH + 4 * REGISTER_WIDTH)
-__IMM_BLANK_BITS = BIT_WIDTH - (PRIMARY_OPCODE_WIDTH + IMMEDIATE_WIDTH + 2 * REGISTER_WIDTH)
+__R_BLANK_BITS__ = BIT_WIDTH - (PRIMARY_OPCODE_WIDTH + SECONDARY_OPCODE_WIDTH + 3 * REGISTER_WIDTH)
+__IMM_BLANK_BITS__ = BIT_WIDTH - (PRIMARY_OPCODE_WIDTH + IMMEDIATE_WIDTH + 2 * REGISTER_WIDTH)
 
-__RE_BLANK = re.compile(r'^\s*(;.*)?$')
-__RE_PARTS = re.compile(
+__RE_BLANK__ = re.compile(r'^\s*(;.*)?$')
+__RE_PARTS__ = re.compile(
     r'^\s*((?P<Label>\w+):)?\s*((?P<Opcode>\.?[\w]+)(?P<Operands>[^;]*))?(;.*)?')
-__RE_HEX = re.compile(r'0x[A-z0-9]*')
-__RE_IMM = re.compile(
+__RE_HEX__ = re.compile(r'0x[A-z0-9]*')
+__RE_IMM__ = re.compile(
     r'^\s*(?P<RS>\w+?)\s*,\s*(?P<RT>\w+?)\s*,\s*(?P<Immediate>\S+?)\s*$')
-__RE_R = re.compile(
+__RE_R__ = re.compile(
     r'^\s*(?P<RD>\w+?)\s*,\s*(?P<RS>\w+?)\s*,\s*(?P<RT>\S+?)\s*$')
-__RE_MEM_JMP = re.compile(
+__RE_MEM_JMP__ = re.compile(
     r'^\s*(?P<RT>\w+?)\s*,\s*(?P<Immediate>\S+?)\s*\((?P<RS>\w+?)\)\s*$')
 
 def receive_params(value_table):
@@ -64,12 +64,12 @@ def receive_params(value_table):
 
 
 def is_blank(line):
-    return __RE_BLANK.match(line) is not None
+    return __RE_BLANK__.match(line) is not None
 
 
 def get_parts(line):
     """Break an instruction into Opcode, Operands and Label"""
-    m = __RE_PARTS.match(line)
+    m = __RE_PARTS__.match(line)
 
     try:
         return (m.group('Label'), m.group('Opcode'), m.group('Operands'))
@@ -82,9 +82,9 @@ def instruction_class(name):
     return ALIASES.get(name, name)
 
 
-def __zero_extend(binary, target, pad_right=False):
+def __zero_extend__(binary, target, pad_right=False):
     if binary.startswith('0b'):
-        bunary = bunary[2:]
+        binary = binary[2:]
 
     zeros = '0' * (target - len(binary))
 
@@ -94,27 +94,27 @@ def __zero_extend(binary, target, pad_right=False):
         return zeros + binary
 
 
-def __sign_extend(binary, target):
+def __sign_extend__(binary, target):
     if binary.startswith('0b'):
         binary = binary[2:]
 
     return binary[0] * (target - len(binary)) + binary
 
 
-def __bin2hex(binary):
+def __bin2hex__(binary):
     return '%0*X' % ((len(binary) + 3) // 4, int(binary, 2))
 
 
-def __hex2bin(hexadecimal):
+def __hex2bin(__hexadecimal):
     return bin(int(hexadecimal, 16))[2:]
 
 
-def __dec2bin(num, bits):
+def __dec2bin__(num, bits):
     """Compute the 2's complement binary of an int value."""
     return format(num if num >= 0 else (1 << bits) + num, '0{}b'.format(bits))
 
 
-def __parse_value(offset, size, pc=None):
+def __parse_value__(offset, size, pc=None):
     bin_offset = None
 
     if type(offset) is str:
@@ -122,7 +122,7 @@ def __parse_value(offset, size, pc=None):
             offset = SYMBOL_TABLE[offset] - (pc + 1)
         elif offset.startswith('0x'):
             try:
-                bin_offset = __hex2bin(offset)
+                bin_offset = __hex2bin__(offset)
             except:
                 raise RuntimeError(
                     "'{}' is not in a valid hexadecimal format.".format(offset))
@@ -131,7 +131,7 @@ def __parse_value(offset, size, pc=None):
                 raise RuntimeError(
                     "'{}' is too large for {}.".format(offset, __name__))
 
-            bin_offset = __zero_extend(bin_offset, size)
+            bin_offset = __zero_extend__(bin_offset, size)
         elif offset.startswith('0b'):
             try:
                 bin_offset = bin(int(offset))
@@ -143,7 +143,7 @@ def __parse_value(offset, size, pc=None):
                 raise RuntimeError(
                     "'{}' is too large for {}.".format(offset, __name__))
 
-            bin_offset = __zero_extend(bin_offset, size)
+            bin_offset = __zero_extend__(bin_offset, size)
 
     # TODO: Ask Chris if this is correct
     if bin_offset is None:
@@ -162,12 +162,12 @@ def __parse_value(offset, size, pc=None):
             raise RuntimeError(
                 "'{}' is too large (values) or too far away (labels) for {}.".format(offset, __name__))
 
-        bin_offset = __dec2bin(offset, size)
+        bin_offset = __dec2bin__(offset, size)
 
     return bin_offset
 
 
-def __parse_r(operands):
+def __parse_r__(operands):
     result_list = []
 
     match = __RE_R__.match(operands)
@@ -187,16 +187,16 @@ def __parse_r(operands):
     return ''.join(result_list)
 
 
-def __parse_imm(operands, is_br=False, pc=None):
+def __parse_imm__(operands, is_br=False, pc=None):
     result_list = []
 
-    match = __RE_IMM.match(operands)
+    match = __RE_IMM__.match(operands)
 
     if match is None:
         raise RuntimeError(
             "Operands '{}' are in an incorrect format.".format(operands.strip()))
 
-    result_list.append(__parse_value(match.group('Immediate'), IMMEDIATE_WIDTH, pc))
+    result_list.append(__parse_value__(match.group('Immediate'), IMMEDIATE_WIDTH, pc))
 
     for op in (match.group('RS'), match.group('RT')):
         if op in REGISTERS:
@@ -208,16 +208,16 @@ def __parse_imm(operands, is_br=False, pc=None):
 
     return ''.join(result_list)
 
-def __parse_mem_jmp(operands, pc=None):
+def __parse_mem_jmp__(operands, pc=None):
     result_list = []
 
-    match = __RE_MEM_JMP.match(operands)
+    match = __RE_MEM_JMP__.match(operands)
 
     if match is None:
         raise RuntimeError(
             "Operands '{}' are in an incorrect format.".format(operands.strip()))
 
-    result_list.append(__parse_value(match.group('Immediate'), IMMEDIATE_WIDTH, pc))
+    result_list.append(__parse_value__(match.group('Immediate'), IMMEDIATE_WIDTH, pc))
 
     for op in (match.group('RS'), match.group('RT')):
         if op in REGISTERS:
@@ -232,27 +232,28 @@ def __parse_mem_jmp(operands, pc=None):
 class add(Instruction):
     @staticmethod
     def opcode():
-        return (add.__primary_opcode(), add.__secondary_opcode())
+        return (add.__primary_opcode__(), add.__secondary_opcode__())
 
     @staticmethod
     def size():
         return 1
 
     @staticmethod
-    def __primary_opcode():
+    def __primary_opcode__():
         return 0;
-    
+
     @staticmethod
-    def __secondary_opcode():
+    def __secondary_opcode__():
         return 2 ** 5
 
     @staticmethod
     def binary(operands, **kwargs):
-        opcode = __zero_extend(bin(add.__primary_opcode()), PRIMARY_OPCODE_WIDTH) + \
-            __zero_extend(bin(add.__secondary_opcode()), SECONDARY_OPCODE_WIDTH)
-        operands = __zero_extend(__parse_r(operands), __R_BLANK_BITS)
+        opcode = __zero_extend__(bin(add.__primary_opcode__()), PRIMARY_OPCODE_WIDTH) + __zero_extend__(bin(add.__secondary_opcode__()), SECONDARY_OPCODE_WIDTH)
+        length = PRIMARY_OPCODE_WIDTH + SECONDARY_OPCODE_WIDTH + __R_BLANK_BITS__
+        opcode = __zero_extend__(opcode, length, pad_right=True)
+        operands = __parse_r__(operands)
         return [opcode + operands]
 
     @staticmethod
     def hex(operands, **kwargs):
-        return [__bin2hex(instr) for instr in add.binary()]
+        return [__bin2hex(instr) for instr in add.binary(operands, **kwargs)]
