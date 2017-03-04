@@ -22,9 +22,6 @@ REGISTER_WIDTH = 4
 # Immediate value width
 IMMEDIATE_WIDTH = BIT_WIDTH - PRIMARY_OPCODE_WIDTH - 2 - (2 * REGISTER_WIDTH)
 
-__R_BLANK_BITS = BIT_WIDTH - (PRIMARY_OPCODE_WIDTH + SECONDARY_OPCODE_WIDTH + 4 * REGISTER_WIDTH)
-__IMM_BLANK_BITS = BIT_WIDTH - (PRIMARY_OPCODE_WIDTH + IMMEDIATE_WIDTH + 2 * REGISTER_WIDTH)
-
 REGISTERS = {
     'zero':   0,
     'a0':   1,
@@ -45,7 +42,10 @@ REGISTERS = {
     'ra':   15
 }
 
-SYMBOL_TABLE = {}
+SYMBOL_TABLE, ALIASES = {}, {}
+
+__R_BLANK_BITS = BIT_WIDTH - (PRIMARY_OPCODE_WIDTH + SECONDARY_OPCODE_WIDTH + 4 * REGISTER_WIDTH)
+__IMM_BLANK_BITS = BIT_WIDTH - (PRIMARY_OPCODE_WIDTH + IMMEDIATE_WIDTH + 2 * REGISTER_WIDTH)
 
 __RE_BLANK = re.compile(r'^\s*(;.*)?$')
 __RE_PARTS = re.compile(
@@ -57,6 +57,10 @@ __RE_R = re.compile(
     r'^\s*(?P<RD>\w+?)\s*,\s*(?P<RS>\w+?)\s*,\s*(?P<RT>\S+?)\s*$')
 __RE_MEM_JMP = re.compile(
     r'^\s*(?P<RT>\w+?)\s*,\s*(?P<Immediate>\S+?)\s*\((?P<RS>\w+?)\)\s*$')
+
+def receive_params(value_table):
+    if value_table:
+        raise RuntimeError('Custom parameters are not supported')
 
 
 def is_blank(line):
@@ -71,6 +75,11 @@ def get_parts(line):
         return (m.group('Label'), m.group('Opcode'), m.group('Operands'))
     except Exception as e:
         return None
+
+
+def instruction_class(name):
+    """Translate a given instruction name to its corresponding class name."""
+    return ALIASES.get(name, name)
 
 
 def __zero_extend(binary, target, pad_right=False):
@@ -206,7 +215,7 @@ def __parse_mem_jmp(operands, pc=None):
 
     if match is None:
         raise RuntimeError(
-            "Operands '{}' are in an incorrect format.".format(operands.strip())))
+            "Operands '{}' are in an incorrect format.".format(operands.strip()))
 
     result_list.append(__parse_value(match.group('Immediate'), IMMEDIATE_WIDTH, pc))
 
@@ -222,7 +231,7 @@ def __parse_mem_jmp(operands, pc=None):
 
 class add(Instruction):
     @staticmethod
-    def opcode:
+    def opcode():
         return (add.__primary_opcode(), add.__secondary_opcode())
 
     @staticmethod
@@ -239,8 +248,8 @@ class add(Instruction):
 
     @staticmethod
     def binary(operands, **kwargs):
-        opcode = __zero_extend(bin(add.__primary_opcode()), PRIMARY_OPCODE_WIDTH) +
-            __zero_extend(bin(add.__secondary_opcode), SECONDARY_OPCODE_WIDTH)
+        opcode = __zero_extend(bin(add.__primary_opcode()), PRIMARY_OPCODE_WIDTH) + \
+            __zero_extend(bin(add.__secondary_opcode()), SECONDARY_OPCODE_WIDTH)
         operands = __zero_extend(__parse_r(operands), __R_BLANK_BITS)
         return [opcode + operands]
 
