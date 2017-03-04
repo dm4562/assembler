@@ -1,4 +1,5 @@
 import re
+from lc2200 import Instruction
 
 """cs3220.py: A definition of the CS3220 architecture"""
 __authors__ = "Dhruv Mehra and Christopher Tam"
@@ -21,24 +22,27 @@ REGISTER_WIDTH = 4
 # Immediate value width
 IMMEDIATE_WIDTH = BIT_WIDTH - PRIMARY_OPCODE_WIDTH - 2 - (2 * REGISTER_WIDTH)
 
+__R_BLANK_BITS = BIT_WIDTH - (PRIMARY_OPCODE_WIDTH + SECONDARY_OPCODE_WIDTH + 4 * REGISTER_WIDTH)
+__IMM_BLANK_BITS = BIT_WIDTH - (PRIMARY_OPCODE_WIDTH + IMMEDIATE_WIDTH + 2 * REGISTER_WIDTH)
+
 REGISTERS = {
     'zero':   0,
-    'A0':   1,
-    'A1':   2,
-    'A2':   3,
-    'A3':   4,
-    'RV':   4,
-    'T0':   5,
-    'T1':   6,
-    'S0':   7,
-    'S1':   8,
-    'S2':   9,
+    'a0':   1,
+    'a1':   2,
+    'a2':   3,
+    'a3':   4,
+    'rV':   4,
+    't0':   5,
+    't1':   6,
+    's0':   7,
+    's1':   8,
+    's2':   9,
     # 'R10'   :   10,
     # 'R11'   :   11,
     # 'R12'   :   12,
-    'FP':   13,
-    'SP':   14,
-    'RA':   15
+    'fp':   13,
+    'sp':   14,
+    'ra':   15
 }
 
 SYMBOL_TABLE = {}
@@ -52,7 +56,7 @@ __RE_IMM = re.compile(
 __RE_R = re.compile(
     r'^\s*(?P<RD>\w+?)\s*,\s*(?P<RS>\w+?)\s*,\s*(?P<RT>\S+?)\s*$')
 __RE_MEM_JMP = re.compile(
-    r'^\s*(?P<RT>\w+?)\s*,\s*(?P<Offset>\S+?)\s*\((?P<RS>\w+?)\)\s*$')
+    r'^\s*(?P<RT>\w+?)\s*,\s*(?P<Immediate>\S+?)\s*\((?P<RS>\w+?)\)\s*$')
 
 
 def is_blank(line):
@@ -132,7 +136,7 @@ def __parse_value(offset, size, pc=None):
 
             bin_offset = __zero_extend(bin_offset, size)
 
-    # Ask Chris if this is correct
+    # TODO: Ask Chris if this is correct
     if bin_offset is None:
         try:
             offset = int(offset)
@@ -195,7 +199,7 @@ def __parse_imm(operands, is_br=False, pc=None):
 
     return ''.join(result_list)
 
-def __parse_mem_jmp(operands):
+def __parse_mem_jmp(operands, pc=None):
     result_list = []
 
     match = __RE_MEM_JMP.match(operands)
@@ -216,21 +220,30 @@ def __parse_mem_jmp(operands):
 
     return ''.join(result_list)
 
-def __parse_j__(operands):
-    result_list = []
+class add(Instruction):
+    @staticmethod
+    def opcode:
+        return (add.__primary_opcode(), add.__secondary_opcode())
 
-    match = __RE_J__.match(operands)
+    @staticmethod
+    def size():
+        return 1
 
-    if match is None:
-        raise RuntimeError(
-            "Operands '{}' are in an incorrect format.".format(operands.strip()))
+    @staticmethod
+    def __primary_opcode():
+        return 0;
+    
+    @staticmethod
+    def __secondary_opcode():
+        return 2 ** 5
 
-    for op in (match.group('RX'), match.group('RY')):
-        if op in REGISTERS:
-            result_list.append(__zero_extend__(
-                bin(REGISTERS[op]), REGISTER_WIDTH))
-        else:
-            raise RuntimeError(
-                "Register identifier '{}' is not valid in {}.".format(op, __name__))
+    @staticmethod
+    def binary(operands, **kwargs):
+        opcode = __zero_extend(bin(add.__primary_opcode()), PRIMARY_OPCODE_WIDTH) +
+            __zero_extend(bin(add.__secondary_opcode), SECONDARY_OPCODE_WIDTH)
+        operands = __zero_extend(__parse_r(operands), __R_BLANK_BITS)
+        return [opcode + operands]
 
-    return ''.join(result_list)
+    @staticmethod
+    def hex(operands, **kwargs):
+        return [__bin2hex(instr) for instr in add.binary()]
