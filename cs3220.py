@@ -16,6 +16,11 @@ PRIMARY_OPCODE_WIDTH = 6
 SECONDARY_OPCODE_WIDTH = 8
 
 # Register width (bits)
+REGISTER_WIDTH = 4
+
+# Immediate value width
+IMMEDIATE_WIDTH = BIT_WIDTH - PRIMARY_OPCODE_WIDTH - 2 - (2 * REGISTER_WIDTH)
+
 REGISTERS = {
     'zero':   0,
     'A0':   1,
@@ -36,12 +41,14 @@ REGISTERS = {
     'RA':   15
 }
 
+SYMBOL_TABLE = {}
+
 __RE_BLANK = re.compile(r'^\s*(;.*)?$')
 __RE_PARTS = re.compile(
     r'^\s*((?P<Label>\w+):)?\s*((?P<Opcode>\.?[\w]+)(?P<Operands>[^;]*))?(;.*)?')
 __RE_HEX = re.compile(r'0x[A-z0-9]*')
 __RE_IMM = re.compile(
-    r'^\s*(?P<RD>\w+?)\s*,\s*(?P<RS>\w+?)\s*,\s*(?P<Offset>\S+?)\s*$')
+    r'^\s*(?P<RS>\w+?)\s*,\s*(?P<RT>\w+?)\s*,\s*(?P<Immediate>\S+?)\s*$')
 __RE_R = re.compile(
     r'^\s*(?P<RD>\w+?)\s*,\s*(?P<RS>\w+?)\s*,\s*(?P<RT>\S+?)\s*$')
 __RE_MEM_JMP = re.compile(
@@ -94,6 +101,59 @@ def __dec2bin(num, bits):
     return format(num if num >= 0 else (1 << bits) + num, '0{}b'.format(bits))
 
 
+def __parse_value(offset, size, pc=None):
+    bin_offset = None
+
+    if type(offset) is str:
+        if pc is not None and offset in SYMBOL_TABLE:
+            offset = SYMBOL_TABLE[offset] - (pc + 1)
+        elif offset.startswith('0x'):
+            try:
+                bin_offset = __hex2bin(offset)
+            except:
+                raise RuntimeError(
+                    "'{}' is not in a valid hexadecimal format.".format(offset))
+
+            if len(bin_offset) > size:
+                raise RuntimeError(
+                    "'{}' is too large for {}.".format(offset, __name__))
+
+            bin_offset = __zero_extend(bin_offset, size)
+        elif offset.startswith('0b'):
+            try:
+                bin_offset = bin(int(offset))
+            except:
+                raise RuntimeError(
+                    "'{}' is not in a valid binary format.".format(offset))
+
+            if len(bin_offset) > size:
+                raise RuntimeError(
+                    "'{}' is too large for {}.".format(offset, __name__))
+
+            bin_offset = __zero_extend(bin_offset, size)
+
+    # Ask Chris if this is correct
+    if bin_offset is None:
+        try:
+            offset = int(offset)
+        except:
+            if pc is not None:
+                raise RuntimeError(
+                    "'{}' cannot be resolved as a label or a value.".format(offset))
+            else:
+                raise RuntimeError(
+                    "'{}' cannot be resolved as a value.".format(offset))
+
+        bound = 2**(size - 1)
+        if offset < -bound or offset >= bound:
+            raise RuntimeError(
+                "'{}' is too large (values) or too far away (labels) for {}.".format(offset, __name__))
+
+        bin_offset = __dec2bin(offset, size)
+
+    return bin_offset
+
+
 def __parse_r(operands):
     result_list = []
 
@@ -114,17 +174,18 @@ def __parse_r(operands):
     return ''.join(result_list)
 
 
-def __parse_i__(operands, is_mem=False, pc=None):
-    # Define result
+def __parse_imm(operands, is_br=False, pc=None):
     result_list = []
 
-    match = __RE_MEM__.match(operands) if is_mem else __RE_I__.match(operands)
+    match = __RE_IMM.match(operands)
 
     if match is None:
         raise RuntimeError(
             "Operands '{}' are in an incorrect format.".format(operands.strip()))
 
-    for op in (match.group('RX'), match.group('RY')):
+    result_list.append(__parse_value(match.group('Immediate'), IMMEDIATE_WIDTH, pc))
+
+    for op in (match.group('RS'), match.group('RT')):
         if op in REGISTERS:
             result_list.append(__zero_extend__(
                 bin(REGISTERS[op]), REGISTER_WIDTH))
@@ -132,14 +193,30 @@ def __parse_i__(operands, is_mem=False, pc=None):
             raise RuntimeError(
                 "Register identifier '{}' is not valid in {}.".format(op, __name__))
 
-    result_list.append(__parse_value__(
-        match.group('Offset'), __OFFSET_SIZE__, pc))
+    return ''.join(result_list)
+
+def __parse_mem_jmp(operands):
+    result_list = []
+
+    match = __RE_MEM_JMP.match(operands)
+
+    if match is None:
+        raise RuntimeError(
+            "Operands '{}' are in an incorrect format.".format(operands.strip())))
+
+    result_list.append(__parse_value(match.group('Immediate'), IMMEDIATE_WIDTH, pc))
+
+    for op in (match.group('RS'), match.group('RT')):
+        if op in REGISTERS:
+            result_list.append(__zero_extend__(
+                bin(REGISTERS[op]), REGISTER_WIDTH))
+        else:
+            raise RuntimeError(
+                "Register identifier '{}' is not valid in {}.".format(op, __name__))
 
     return ''.join(result_list)
 
-
 def __parse_j__(operands):
-    # Define result
     result_list = []
 
     match = __RE_J__.match(operands)
