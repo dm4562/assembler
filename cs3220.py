@@ -328,3 +328,69 @@ class lshf(RInstruction):
     def secondary_opcode(cls):
         return int('31', 16)
 
+class IInstruction(Instruction):
+    @classmethod
+    def opcode(cls):
+        raise NotImplementedError()
+
+    @classmethod
+    def size(cls):
+        return 1
+
+    @classmethod
+    def binary(cls, operands, **kwargs):
+        opcode = __zero_extend__(bin(cls.opcode()), PRIMARY_OPCODE_WIDTH)
+        length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
+        opcode = __zero_extend__(opcode, length, pad_right=True)
+        operands = __parse_imm__(operands)
+        return [opcode + operands]
+
+    @classmethod
+    def hex(cls, operands, **kwargs):
+        return [__bin2hex__(instr) for instr in cls.binary(operands, **kwargs)]
+
+class beq(IInstruction):
+    @classmethod
+    def opcode(cls):
+        return int('001000', 2)
+
+class blt(IInstruction):
+    @classmethod
+    def opcode(cls):
+        return int('001001', 2)
+
+class ble(IInstruction):
+    @classmethod
+    def opcode(cls):
+        return int('001010', 2)
+
+class bne(IInstruction):
+    @classmethod
+    def opcode(cls):
+        return int('001011', 2)
+
+class beq(IInstruction):
+    @classmethod
+    def opcode(cls):
+        return int('001000', 2)
+
+class addi(IInstruction):
+    @classmethod
+    def opcode(cls):
+        return int('100000', 2)
+
+class andi(IInstruction):
+    @classmethod
+    def opcode(cls):
+        return int('100100', 2)
+
+class ori(IInstruction):
+    @classmethod
+    def opcode(cls):
+        return int('100101', 2)
+
+class xori(IInstruction):
+    @classmethod
+    def opcode(cls):
+        return int('100110', 2)
+
