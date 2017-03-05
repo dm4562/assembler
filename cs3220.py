@@ -119,11 +119,15 @@ def __dec2bin__(num, bits):
     return format(num if num >= 0 else (1 << bits) + num, '0{}b'.format(bits))
 
 
-def __parse_value__(offset, size, pc=None):
+def __parse_value__(offset, size, pc=None, jmp=False, rs=None):
     bin_offset = None
     # print(offset, pc)
+
     if type(offset) is str:
-        if pc is not None and offset in SYMBOL_TABLE:
+        if jmp and offset in SYMBOL_TABLE:
+            assert(rs is not None)
+            offset = SYMBOL_TABLE[offset] - rs
+        elif pc is not None and offset in SYMBOL_TABLE:
             offset = SYMBOL_TABLE[offset] - (pc + 1)
         elif offset.startswith('0x'):
             try:
@@ -222,7 +226,7 @@ def __parse_mem_jmp__(operands, pc=None):
         raise RuntimeError(
             "Operands '{}' are in an incorrect format.".format(operands.strip()))
 
-    result_list.append(__parse_value__(match.group('Immediate'), IMMEDIATE_WIDTH, pc))
+    result_list.append(__parse_value__(match.group('Immediate'), size=IMMEDIATE_WIDTH, jmp=True, rs=match.group('RS')))
 
     for op in (match.group('RS'), match.group('RT')):
         if op in REGISTERS:
@@ -444,3 +448,17 @@ class xori(IInstruction):
     def opcode(cls):
         return int('100110', 2)
 
+class jal(IInstruction):
+    @classmethod
+    def opcode(cls):
+        return int('001100', 2)
+
+    @classmethod
+    def binary(cls, operands, **kwargs):
+        assert('pc' in kwargs)  # sanity check
+
+        opcode = __zero_extend__(bin(cls.opcode(), PRIMARY_OPCODE_WIDTH))
+        length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
+        opcode = __zero_extend__(opcode, length)
+
+        operands = __parse_mem_jmp__(operands, pc)
