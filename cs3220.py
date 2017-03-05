@@ -55,8 +55,10 @@ __IMM_BLANK_BITS__ = BIT_WIDTH - \
     (PRIMARY_OPCODE_WIDTH + IMMEDIATE_WIDTH + 2 * REGISTER_WIDTH)
 
 __RE_BLANK__ = re.compile(r'^\s*(;.*)?$')
+# __RE_PARTS__ = re.compile(
+# r'^\s*((?P<Label>\w+):)?\s*((?P<Opcode>\.?[\w]+)(?P<Operands>[^;]*))?(;.*)?')
 __RE_PARTS__ = re.compile(
-    r'^\s*((?P<Label>\w+):)?\s*((?P<Opcode>\.?[\w]+)(?P<Operands>[^;]*))?(;.*)?')
+    r'^\s*(\.(?P<Keyword>\w+)?\s*((?P<Key>\w+)\s*\=)?\s*(?P<Value>[^;\s]+))?\s*((?P<Label>\w+):)?\s*((?P<Opcode>\.?[\w]+)(?P<Operands>[^;]*))?(;.*)?')
 __RE_HEX__ = re.compile(r'0x[A-z0-9]*')
 __RE_IMM__ = re.compile(
     r'^\s*(?P<RS>\w+?)\s*,\s*(?P<RT>\w+?)\s*,\s*(?P<Immediate>\S+?)\s*$')
