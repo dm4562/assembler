@@ -369,6 +369,10 @@ class nand(RInstruction):
     def secondary_opcode(cls):
         return int('2c', 16)
 
+class nor(RInstruction):
+    @classmethod
+    def secondary_opcode(cls):
+        return int('2d', 16)
 
 class nxor(RInstruction):
 
