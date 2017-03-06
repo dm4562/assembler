@@ -562,6 +562,32 @@ class jal(IInstruction):
 
         opcode = __zero_extend__(bin(cls.opcode(), PRIMARY_OPCODE_WIDTH))
         length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
-        opcode = __zero_extend__(opcode, length)
+        opcode = __zero_extend__(opcode, length, pad_right=True)
 
         operands = __parse_mem_jmp__(operands, pc)
+
+class lw(IInstruction):
+    @classmethod
+    def opcode(cls):
+        return int('010010', 2)
+
+    @classmethod
+    def binary(cls, operands, **kwargs):
+        opcode = __zero_extend__(bin(cls.opcode(), PRIMARY_OPCODE_WIDTH))
+        length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
+        opcode = __zero_extend__(opcode, length, pad_right=True)
+
+        operands = __parse_mem_jmp__(operands, pc=pc, mem=True)
+
+class sw(IInstruction):
+    @classmethod
+    def opcode(cls):
+        return int('011010', 2)
+
+    @classmethod
+    def binary(cls, operands, **kwargs):
+        opcode = __zero_extend__(bin(cls.opcode(), PRIMARY_OPCODE_WIDTH))
+        length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
+        opcode = __zero_extend__(opcode, length, pad_right=True)
+
+        operands = __parse_mem_jmp__(operands, pc=pc, mem=True)
