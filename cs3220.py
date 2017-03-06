@@ -573,3 +573,15 @@ class not_(nand):
     def build_operands(cls, operands):
         rd, rs, rt = __parse_r__(operands)
         return ''.join((rd, rs, rs))
+
+class ge(le):
+    @classmethod
+    def build_operands(cls, operands):
+        rd, rs, rt = __parse_r__(operands)
+        return ''.join((rd, rt, rs))
+
+class gt(lt):
+    @classmethod
+    def build_operands(cls, operands):
+        rd, rs, rt = __parse_r__(operands)
+        return ''.join((rd, rt, rs))
