@@ -369,10 +369,13 @@ class nand(RInstruction):
     def secondary_opcode(cls):
         return int('2c', 16)
 
+
 class nor(RInstruction):
+
     @classmethod
     def secondary_opcode(cls):
         return int('2d', 16)
+
 
 class nxor(RInstruction):
 
@@ -608,66 +611,86 @@ class sw(IInstruction):
         operands = __parse_mem_jmp__(operands, mem=True)
         return [opcode + ''.join(operands)]
 
+
 class not_(nand):
+
     @classmethod
     def build_operands(cls, operands):
         rd, rs, rt = __parse_r__(operands)
         return ''.join((rd, rs, rs))
 
+
 class ge(le):
+
     @classmethod
     def build_operands(cls, operands):
         rd, rs, rt = __parse_r__(operands)
         return ''.join((rd, rt, rs))
+
 
 class gt(lt):
+
     @classmethod
     def build_operands(cls, operands):
         rd, rs, rt = __parse_r__(operands)
         return ''.join((rd, rt, rs))
 
+
 class bgt(blt):
+
     @classmethod
     def build_operands(cls, operands, pc=None):
         imm, rd, rs = __parse_imm__(operands)
         return ''.join((imm, rs, rd))
+
 
 class bge(ble):
+
     @classmethod
     def build_operands(cls, operands, pc=None):
         imm, rd, rs = __parse_imm__(operands)
         return ''.join((imm, rs, rd))
 
+
 class subi(addi):
+
     @classmethod
     def build_operands(cls, operands, pc=None):
         imm, rd, rs = __parse_imm__(operands)
         imm = __parse_value__(-int(imm, 2), IMMEDIATE_WIDTH)
         return ''.join((imm, rd, rs))
 
+
 class br(beq):
+
     @classmethod
     def build_operands(cls, operands, pc=None):
         imm, rd, rs = __parse_imm__(operands)
         return ''.join((imm, '0000', '0000'))
 
+
 class ret(jal):
+
     @classmethod
     def build_operands(cls, operands, pc=None):
         l = [
-            __zero_extend__('0', IMMEDIATE_WIDTH), 
-            __dec2bin__(10, REGISTER_WIDTH), 
+            __zero_extend__('0', IMMEDIATE_WIDTH),
+            __dec2bin__(10, REGISTER_WIDTH),
             __dec2bin__(REGISTERS['ra'], REGISTER_WIDTH)
         ]
         return ''.join(l)
 
+
 class call(jal):
+
     @classmethod
     def build_operands(cls, operands, pc=None):
         imm, rs, rt = __parse_mem_jmp__(operands, pc)
         return ''.join((imm, rs, __dec2bin__(REGISTERS['ra'], REGISTER_WIDTH)))
 
+
 class jmp(jal):
+
     @classmethod
     def build_operands(cls, operands, pc=None):
         imm, rs, rt = __parse_mem_jmp__(operands, pc)
