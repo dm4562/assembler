@@ -566,7 +566,9 @@ class jal(IInstruction):
 
         operands = __parse_mem_jmp__(operands, pc)
 
+
 class lw(IInstruction):
+
     @classmethod
     def opcode(cls):
         return int('010010', 2)
@@ -579,7 +581,9 @@ class lw(IInstruction):
 
         operands = __parse_mem_jmp__(operands, pc=pc, mem=True)
 
+
 class sw(IInstruction):
+
     @classmethod
     def opcode(cls):
         return int('011010', 2)
