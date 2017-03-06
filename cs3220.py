@@ -632,3 +632,9 @@ class subi(addi):
         imm, rd, rs = __parse_imm__(operands)
         imm = __parse_value__(-int(imm, 2), IMMEDIATE_WIDTH)
         return ''.join((imm, rd, rs))
+
+class br(beq):
+    @classmethod
+    def build_operands(cls, operands, pc=None):
+        imm, rd, rs = __parse_imm__(operands)
+        return ''.join((imm, '0000', '0000'))
