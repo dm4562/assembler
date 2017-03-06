@@ -159,7 +159,6 @@ def __parse_value__(offset, size, pc=None, jmp=False, rs=None):
 
             bin_offset = __zero_extend__(bin_offset, size)
 
-    # TODO: Ask Chris if this is correct
     if bin_offset is None:
         try:
             offset = int(offset)
@@ -175,6 +174,47 @@ def __parse_value__(offset, size, pc=None, jmp=False, rs=None):
         if offset < -bound or offset >= bound:
             raise RuntimeError(
                 "'{}' is too large (values) or too far away (labels) for {}.".format(offset, __name__))
+
+        bin_offset = __dec2bin__(offset, size)
+
+    return bin_offset
+
+
+def __parse_mem_value__(offset, size=IMMEDIATE_WIDTH):
+    bin_offset = None
+
+    if offset in SYMBOL_TABLE:
+        offset = SYMBOL_TABLE[offset]
+        bin_offset = __dec2bin__(offset, size)
+    else:
+        if offset.startswith('0x'):
+            try:
+                offset = __hex2bin__(offset)
+            except Exception:
+                raise RuntimeError("'{}' is not valid hexadecimal format")
+        elif offset.startswith('0b'):
+            try:
+                offset = bin(int(offset))
+            except Exception:
+                raise RuntimeError("'{}' is not a valid binary format")
+
+        if len(offset) > size:
+            raise RuntimeError(
+                "'{}' is too large a value for {}".format(offset, __name__))
+
+        bin_offset = __zero_extend__(bin_offset, size)
+
+    if bin_offset is None:
+        try:
+            offset = int(offset)
+        except Exception:
+            raise RuntimeError("'{}' cannot be resolved".format(offset))
+
+        bound = 2 ** (size - 1)
+
+        if offset < -bound or offset >= bound:
+            raise RuntimeError(
+                "'{}' is too large for {}.".format(offset, __name__))
 
         bin_offset = __dec2bin__(offset, size)
 
@@ -224,7 +264,7 @@ def __parse_imm__(operands, is_br=False, pc=None):
     return ''.join(result_list)
 
 
-def __parse_mem_jmp__(operands, pc=None):
+def __parse_mem_jmp__(operands, pc=None, mem=False):
     result_list = []
 
     match = __RE_MEM_JMP__.match(operands)
@@ -233,8 +273,11 @@ def __parse_mem_jmp__(operands, pc=None):
         raise RuntimeError(
             "Operands '{}' are in an incorrect format.".format(operands.strip()))
 
-    result_list.append(__parse_value__(match.group(
-        'Immediate'), size=IMMEDIATE_WIDTH, jmp=True, rs=match.group('RS')))
+    if mem:
+        result_list.append(__parse_mem_value__(match.group('Immediate')))
+    else:
+        result_list.append(__parse_value__(match.group(
+            'Immediate'), size=IMMEDIATE_WIDTH, jmp=True, rs=match.group('RS')))
 
     for op in (match.group('RS'), match.group('RT')):
         if op in REGISTERS:
