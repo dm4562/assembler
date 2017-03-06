@@ -34,9 +34,6 @@ REGISTERS = {
     's0':   7,
     's1':   8,
     's2':   9,
-    # 'R10'   :   10,
-    # 'R11'   :   11,
-    # 'R12'   :   12,
     'fp':   13,
     'sp':   14,
     'ra':   15
@@ -121,61 +118,39 @@ def __hex2bin__(hexadecimal):
 
 def __dec2bin__(num, bits):
     """Compute the 2's complement binary of an int value."""
-    return format(num if num >= 0 else (1 << bits) + num, '0{}b'.format(bits))
+    binary = format(num if num >= 0 else (1 << bits) + num, '0{}b'.format(bits))
+    return binary if len(binary) <= bits else binary[-bits:]
 
-
-def __parse_value__(offset, size, pc=None, jmp=False, rs=None):
+def __parse_value__(offset, size, pc=None, jmp=False):
     bin_offset = None
-    # print(offset, pc)
 
     if type(offset) is str:
         if jmp and offset in SYMBOL_TABLE:
-            assert(rs is not None)
-            offset = SYMBOL_TABLE[offset] - rs
+            # assert(rs is not None)
+            offset = SYMBOL_TABLE[offset]
         elif pc is not None and offset in SYMBOL_TABLE:
             offset = SYMBOL_TABLE[offset] - (pc + 1)
         elif offset.startswith('0x'):
             try:
-                bin_offset = __hex2bin__(offset)
-            except:
-                raise RuntimeError(
-                    "'{}' is not in a valid hexadecimal format.".format(offset))
-
-            if len(bin_offset) > size:
-                raise RuntimeError(
-                    "'{}' is too large for {}.".format(offset, __name__))
-
-            bin_offset = __zero_extend__(bin_offset, size)
+                offset = int(offset, 16)
+            except Exception:
+                raise RuntimeError("'{}' is not valid hexadecimal format")
         elif offset.startswith('0b'):
             try:
-                bin_offset = bin(int(offset))
-            except:
-                raise RuntimeError(
-                    "'{}' is not in a valid binary format.".format(offset))
-
-            if len(bin_offset) > size:
-                raise RuntimeError(
-                    "'{}' is too large for {}.".format(offset, __name__))
-
-            bin_offset = __zero_extend__(bin_offset, size)
-
-    if bin_offset is None:
-        try:
-            offset = int(offset)
-        except:
-            if pc is not None:
-                raise RuntimeError(
-                    "'{}' cannot be resolved as a label or a value.".format(offset))
-            else:
-                raise RuntimeError(
-                    "'{}' cannot be resolved as a value.".format(offset))
-
-        bound = 2**(size - 1)
-        if offset < -bound or offset >= bound:
+                offset = int(offset, 2)
+            except Exception:
+                raise RuntimeError("'{}' is not valid binary format")
+    try:
+        offset = int(offset)
+    except Exception:
+        if pc is not None:
             raise RuntimeError(
-                "'{}' is too large (values) or too far away (labels) for {}.".format(offset, __name__))
+                "'{}' cannot be resolved as a label or a value.".format(offset))
+        else:
+            raise RuntimeError(
+                "'{}' cannot be resolved as a value.".format(offset))
 
-        bin_offset = __dec2bin__(offset, size)
+    bin_offset = __dec2bin__(offset, size)
 
     return bin_offset
 
@@ -185,38 +160,23 @@ def __parse_mem_value__(offset, size=IMMEDIATE_WIDTH):
 
     if offset in SYMBOL_TABLE:
         offset = SYMBOL_TABLE[offset]
-        bin_offset = __dec2bin__(offset, size)
-    else:
-        if offset.startswith('0x'):
-            try:
-                offset = __hex2bin__(offset)
-            except Exception:
-                raise RuntimeError("'{}' is not valid hexadecimal format")
-        elif offset.startswith('0b'):
-            try:
-                offset = bin(int(offset))
-            except Exception:
-                raise RuntimeError("'{}' is not a valid binary format")
-
-        if len(offset) > size:
-            raise RuntimeError(
-                "'{}' is too large a value for {}".format(offset, __name__))
-
-        bin_offset = __zero_extend__(bin_offset, size)
-
-    if bin_offset is None:
+    elif offset.startswith('0x'):
         try:
-            offset = int(offset)
+            offset = int(offset, 16)
         except Exception:
-            raise RuntimeError("'{}' cannot be resolved".format(offset))
+            raise RuntimeError("'{}' is not valid hexadecimal format")
+    elif offset.startswith('0b'):
+        try:
+            offset = int(offset, 2)
+        except Exception:
+            raise RuntimeError("'{}' is not a valid binary format")
 
-        bound = 2 ** (size - 1)
+    try:
+        offset = int(offset)
+    except Exception:
+        raise RuntimeError("'{}' cannot be resolved".format(offset))
 
-        if offset < -bound or offset >= bound:
-            raise RuntimeError(
-                "'{}' is too large for {}.".format(offset, __name__))
-
-        bin_offset = __dec2bin__(offset, size)
+    bin_offset = __dec2bin__(offset, size)
 
     return bin_offset
 
@@ -277,7 +237,7 @@ def __parse_mem_jmp__(operands, pc=None, mem=False):
         result_list.append(__parse_mem_value__(match.group('Immediate')))
     else:
         result_list.append(__parse_value__(match.group(
-            'Immediate'), size=IMMEDIATE_WIDTH, jmp=True, rs=match.group('RS')))
+            'Immediate'), size=IMMEDIATE_WIDTH, pc=pc, jmp=True))
 
     for op in (match.group('RS'), match.group('RT')):
         if op in REGISTERS:
@@ -560,11 +520,12 @@ class jal(IInstruction):
     def binary(cls, operands, **kwargs):
         assert('pc' in kwargs)  # sanity check
 
-        opcode = __zero_extend__(bin(cls.opcode(), PRIMARY_OPCODE_WIDTH))
+        opcode = __zero_extend__(bin(cls.opcode()), PRIMARY_OPCODE_WIDTH)
         length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
         opcode = __zero_extend__(opcode, length, pad_right=True)
 
-        operands = __parse_mem_jmp__(operands, pc)
+        operands = __parse_mem_jmp__(operands, pc=kwargs['pc'])
+        return [opcode + operands]
 
 
 class lw(IInstruction):
@@ -575,11 +536,12 @@ class lw(IInstruction):
 
     @classmethod
     def binary(cls, operands, **kwargs):
-        opcode = __zero_extend__(bin(cls.opcode(), PRIMARY_OPCODE_WIDTH))
+        opcode = __zero_extend__(bin(cls.opcode()), PRIMARY_OPCODE_WIDTH)
         length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
         opcode = __zero_extend__(opcode, length, pad_right=True)
 
-        operands = __parse_mem_jmp__(operands, pc=pc, mem=True)
+        operands = __parse_mem_jmp__(operands, mem=True)
+        return [opcode + operands]
 
 
 class sw(IInstruction):
@@ -590,8 +552,9 @@ class sw(IInstruction):
 
     @classmethod
     def binary(cls, operands, **kwargs):
-        opcode = __zero_extend__(bin(cls.opcode(), PRIMARY_OPCODE_WIDTH))
+        opcode = __zero_extend__(bin(cls.opcode()), PRIMARY_OPCODE_WIDTH)
         length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
         opcode = __zero_extend__(opcode, length, pad_right=True)
 
-        operands = __parse_mem_jmp__(operands, pc=pc, mem=True)
+        operands = __parse_mem_jmp__(operands, mem=True)
+        return [opcode + operands]
