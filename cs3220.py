@@ -59,7 +59,7 @@ __RE_HEX__ = re.compile(r'0x[A-z0-9]*')
 __RE_IMM__ = re.compile(
     r'^\s*(?P<RS>\w+?)\s*,\s*(?P<RT>\w+?)\s*,\s*(?P<Immediate>\S+?)\s*$')
 __RE_R__ = re.compile(
-    r'^\s*(?P<RD>\w+?)\s*,\s*(?P<RS>\w+?)\s*,\s*(?P<RT>\S+?)?\s*$')
+    r'^\s*(?P<RD>\S+?)\s*,\s*(?P<RS>\S+?)\s*(,\s*(?P<RT>\S+?))?\s*$')
 __RE_MEM_JMP__ = re.compile(
     r'^\s*(?P<RT>\w+?)\s*,\s*(?P<Immediate>\S+?)\s*\((?P<RS>\w+?)\)\s*$')
 
@@ -192,6 +192,10 @@ def __parse_r__(operands):
             "Operands '{}' are in an incorrect format.".format(operands.strip()))
 
     for op in (match.group('RD'), match.group('RS'), match.group('RT')):
+        if not op:
+            result_list.append(None)
+            continue
+
         if op in REGISTERS:
             result_list.append(__zero_extend__(
                 bin(REGISTERS[op])[2:], REGISTER_WIDTH))
@@ -564,12 +568,8 @@ class sw(IInstruction):
         operands = __parse_mem_jmp__(operands, mem=True)
         return [opcode + operands]
 
-class not_(RInstruction):
+class not_(nand):
     @classmethod
-    def opcode(cls):
-        return nand.opcode()
-
-    @classmethod
-    def binary(cls, operands, **kwargs):
-        operands = __parse_r__()
-        return nand.binary()
+    def build_operands(cls, operands):
+        rd, rs, rt = __parse_r__(operands)
+        return ''.join((rd, rs, rs))
