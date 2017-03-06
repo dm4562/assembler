@@ -6,6 +6,7 @@ import os
 import importlib
 import operator
 import re
+import traceback
 
 """assembler.py: General, modular 2-pass assembler accepting ISA definitions to assemble code."""
 __author__ = "Christopher Tam"
@@ -49,7 +50,7 @@ def pass1(file):
         line = line.lower()
         
         # Parse line
-        label, op, _ = ISA.get_parts(line)
+        keyword, key, val, label, op, _ = ISA.get_parts(line)
         if label:
             if label in ISA.SYMBOL_TABLE:
                 error(line_count, "label '{}' is defined more than once".format(label))
@@ -97,7 +98,7 @@ def pass2(input_file, use_hex):
         # Make line case-insensitive
         line = line.lower()
 
-        _, op, operands = ISA.get_parts(line)
+        _, _, _, _, op, operands = ISA.get_parts(line)
                 
         if op:
             instr = getattr(ISA, ISA.instruction_class(op))
@@ -108,6 +109,7 @@ def pass2(input_file, use_hex):
                 else:
                     assembled = instr.binary(operands, pc=pc, instruction=op)
             except Exception as e:
+                print(traceback.format_exc())
                 error(line_count, str(e))
                 success = False
             
