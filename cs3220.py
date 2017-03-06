@@ -656,3 +656,15 @@ class ret(jal):
             __dec2bin__(REGISTERS['ra'], REGISTER_WIDTH)
         ]
         return ''.join(l)
+
+class call(jal):
+    @classmethod
+    def build_operands(cls, operands, pc=None):
+        imm, rs, rt = __parse_mem_jmp__(operands, pc)
+        return ''.join((imm, rs, __dec2bin__(REGISTERS['ra'], REGISTER_WIDTH)))
+
+class jmp(jal):
+    @classmethod
+    def build_operands(cls, operands, pc=None):
+        imm, rs, rt = __parse_mem_jmp__(operands, pc)
+        return ''.join((imm, rs, __dec2bin__(10, REGISTER_WIDTH)))
