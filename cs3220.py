@@ -43,7 +43,8 @@ SYMBOL_TABLE = {}
 
 ALIASES = {
     'and': 'and_',
-    'or': 'or_'
+    'or': 'or_',
+    'not': 'not_'
 }
 
 __R_BLANK_BITS__ = BIT_WIDTH - \
@@ -52,15 +53,13 @@ __IMM_BLANK_BITS__ = BIT_WIDTH - \
     (PRIMARY_OPCODE_WIDTH + IMMEDIATE_WIDTH + 2 * REGISTER_WIDTH)
 
 __RE_BLANK__ = re.compile(r'^\s*(;.*)?$')
-# __RE_PARTS__ = re.compile(
-# r'^\s*((?P<Label>\w+):)?\s*((?P<Opcode>\.?[\w]+)(?P<Operands>[^;]*))?(;.*)?')
 __RE_PARTS__ = re.compile(
-    r'^\s*(\.(?P<Keyword>\w+)?\s*((?P<Key>\w+)\s*\=)?\s*(?P<Value>[^;\s]+))?\s*((?P<Label>\w+):)?\s*((?P<Opcode>\.?[\w]+)(?P<Operands>[^;]*))?(;.*)?')
+    r'^\s*(\.(?P<Keyword>\w+)?\s*((?P<Key>\w+)\s*\=)?\s*(?P<Value>[^;\s]+))?\s*((?P<Label>\w+):)?\s*((?P<Opcode>\.?[\w]+)\s*(?P<Operands>[^;]*))?(;.*)?')
 __RE_HEX__ = re.compile(r'0x[A-z0-9]*')
 __RE_IMM__ = re.compile(
     r'^\s*(?P<RS>\w+?)\s*,\s*(?P<RT>\w+?)\s*,\s*(?P<Immediate>\S+?)\s*$')
 __RE_R__ = re.compile(
-    r'^\s*(?P<RD>\w+?)\s*,\s*(?P<RS>\w+?)\s*,\s*(?P<RT>\S+?)\s*$')
+    r'^\s*(?P<RD>\w+?)\s*,\s*(?P<RS>\w+?)\s*,\s*(?P<RT>\S+?)?\s*$')
 __RE_MEM_JMP__ = re.compile(
     r'^\s*(?P<RT>\w+?)\s*,\s*(?P<Immediate>\S+?)\s*\((?P<RS>\w+?)\)\s*$')
 
@@ -200,7 +199,7 @@ def __parse_r__(operands):
             raise RuntimeError(
                 "Register identifier '{}' is not valid in {}.".format(op, __name__))
 
-    return ''.join(result_list)
+    return tuple(result_list)
 
 
 def __parse_imm__(operands, is_br=False, pc=None):
@@ -271,13 +270,17 @@ class RInstruction(Instruction):
         raise NotImplementedError()
 
     @classmethod
+    def build_operands(cls, operands):
+        return ''.join(__parse_r__(operands))
+
+    @classmethod
     def binary(cls, operands, **kwargs):
         opcode = __zero_extend__(bin(cls.primary_opcode()), PRIMARY_OPCODE_WIDTH) + \
             __zero_extend__(bin(cls.secondary_opcode()),
                             SECONDARY_OPCODE_WIDTH)
         length = PRIMARY_OPCODE_WIDTH + SECONDARY_OPCODE_WIDTH + __R_BLANK_BITS__
         opcode = __zero_extend__(opcode, length, pad_right=True)
-        operands = __parse_r__(operands)
+        operands = cls.build_operands(operands)
         return [opcode + operands]
 
     @classmethod
@@ -560,3 +563,13 @@ class sw(IInstruction):
 
         operands = __parse_mem_jmp__(operands, mem=True)
         return [opcode + operands]
+
+class not_(RInstruction):
+    @classmethod
+    def opcode(cls):
+        return nand.opcode()
+
+    @classmethod
+    def binary(cls, operands, **kwargs):
+        operands = __parse_r__()
+        return nand.binary()
