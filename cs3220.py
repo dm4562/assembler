@@ -61,7 +61,7 @@ __RE_IMM__ = re.compile(
 __RE_R__ = re.compile(
     r'^\s*(?P<RD>\S+?)\s*,\s*(?P<RS>\S+?)\s*(,\s*(?P<RT>\S+?))?\s*$')
 __RE_MEM_JMP__ = re.compile(
-    r'^\s*(?P<RT>\w+?)\s*,\s*(?P<Immediate>\S+?)\s*\((?P<RS>\w+?)\)\s*$')
+    r'^(\s*(?P<RT>\w+?)\s*,)?\s*((?P<Immediate>\S+?)\s*\((?P<RS>\w+?)\))?\s*$')
 
 
 def receive_params(value_table):
@@ -249,6 +249,10 @@ def __parse_mem_jmp__(operands, pc=None, mem=False):
             'Immediate'), size=IMMEDIATE_WIDTH, pc=pc, jmp=True))
 
     for op in (match.group('RS'), match.group('RT')):
+        if not op:
+            result_list.append(None)
+            continue
+
         if op in REGISTERS:
             result_list.append(__zero_extend__(
                 bin(REGISTERS[op]), REGISTER_WIDTH))
@@ -256,7 +260,7 @@ def __parse_mem_jmp__(operands, pc=None, mem=False):
             raise RuntimeError(
                 "Register identifier '{}' is not valid in {}.".format(op, __name__))
 
-    return ''.join(result_list)
+    return tuple(result_list)
 
 
 class RInstruction(Instruction):
@@ -554,6 +558,10 @@ class jal(IInstruction):
         return int('001100', 2)
 
     @classmethod
+    def build_operands(cls, operands, pc=None):
+        return ''.join(__parse_mem_jmp__(operands, pc))
+
+    @classmethod
     def binary(cls, operands, **kwargs):
         assert('pc' in kwargs)  # sanity check
 
@@ -561,7 +569,7 @@ class jal(IInstruction):
         length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
         opcode = __zero_extend__(opcode, length, pad_right=True)
 
-        operands = __parse_mem_jmp__(operands, pc=kwargs['pc'])
+        operands = cls.build_operands(operands, pc=kwargs['pc'])
         return [opcode + operands]
 
 
@@ -578,7 +586,7 @@ class lw(IInstruction):
         opcode = __zero_extend__(opcode, length, pad_right=True)
 
         operands = __parse_mem_jmp__(operands, mem=True)
-        return [opcode + operands]
+        return [opcode + ''.join(operands)]
 
 
 class sw(IInstruction):
@@ -594,7 +602,7 @@ class sw(IInstruction):
         opcode = __zero_extend__(opcode, length, pad_right=True)
 
         operands = __parse_mem_jmp__(operands, mem=True)
-        return [opcode + operands]
+        return [opcode + ''.join(operands)]
 
 class not_(nand):
     @classmethod
@@ -638,3 +646,13 @@ class br(beq):
     def build_operands(cls, operands, pc=None):
         imm, rd, rs = __parse_imm__(operands)
         return ''.join((imm, '0000', '0000'))
+
+class ret(jal):
+    @classmethod
+    def build_operands(cls, operands, pc=None):
+        l = [
+            __zero_extend__('0', IMMEDIATE_WIDTH), 
+            __dec2bin__(10, REGISTER_WIDTH), 
+            __dec2bin__(REGISTERS['ra'], REGISTER_WIDTH)
+        ]
+        return ''.join(l)
