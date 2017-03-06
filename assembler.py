@@ -57,7 +57,14 @@ def pass1(file):
                 no_errors = False
             else:
                 ISA.SYMBOL_TABLE[label] = pc
-                
+
+        if keyword and key:
+            if key in ISA.SYMBOL_TABLE:
+                error(line_count, "label '{}' is defined more than once".format(key))
+                no_errors = False
+            else:
+                ISA.SYMBOL_TABLE[key] = int(val, 16)
+
         if op:
             try:
                 pc += getattr(ISA, ISA.instruction_class(op)).size()
