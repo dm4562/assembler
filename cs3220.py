@@ -118,8 +118,10 @@ def __hex2bin__(hexadecimal):
 
 def __dec2bin__(num, bits):
     """Compute the 2's complement binary of an int value."""
-    binary = format(num if num >= 0 else (1 << bits) + num, '0{}b'.format(bits))
+    binary = format(num if num >= 0 else (
+        1 << bits) + num, '0{}b'.format(bits))
     return binary if len(binary) <= bits else binary[-bits:]
+
 
 def __parse_value__(offset, size, pc=None, jmp=False):
     bin_offset = None
