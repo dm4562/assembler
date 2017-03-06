@@ -82,7 +82,7 @@ def get_parts(line):
     m = __RE_PARTS__.match(line)
 
     try:
-        return (m.group('Label'), m.group('Opcode'), m.group('Operands'))
+        return (m.group('Keyword'), m.group('Key'), m.group('Value'), m.group('Label'), m.group('Opcode'), m.group('Operands'))
     except Exception as e:
         return None
 
