@@ -613,3 +613,22 @@ class gt(lt):
     def build_operands(cls, operands):
         rd, rs, rt = __parse_r__(operands)
         return ''.join((rd, rt, rs))
+
+class bgt(blt):
+    @classmethod
+    def build_operands(cls, operands, pc=None):
+        imm, rd, rs = __parse_imm__(operands)
+        return ''.join((imm, rs, rd))
+
+class bge(ble):
+    @classmethod
+    def build_operands(cls, operands, pc=None):
+        imm, rd, rs = __parse_imm__(operands)
+        return ''.join((imm, rs, rd))
+
+class subi(addi):
+    @classmethod
+    def build_operands(cls, operands, pc=None):
+        imm, rd, rs = __parse_imm__(operands)
+        imm = __parse_value__(-int(imm, 2), IMMEDIATE_WIDTH)
+        return ''.join((imm, rd, rs))
