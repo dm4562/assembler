@@ -57,7 +57,7 @@ __RE_PARTS__ = re.compile(
     r'^\s*(\.(?P<Keyword>\w+)?\s*((?P<Key>\w+)\s*\=)?\s*(?P<Value>[^;\s]+))?\s*((?P<Label>\w+):)?\s*((?P<Opcode>\.?[\w]+)\s*(?P<Operands>[^;]*))?(;.*)?')
 __RE_HEX__ = re.compile(r'0x[A-z0-9]*')
 __RE_IMM__ = re.compile(
-    r'^\s*(?P<RS>\w+?)\s*,\s*(?P<RT>\w+?)\s*,\s*(?P<Immediate>\S+?)\s*$')
+    r'(^\s*(?P<RS>\w+?)\s*,)?\s*((?P<RT>\w+?)?\s*,)?\s*(?P<Immediate>\S+?)\s*$')
 __RE_R__ = re.compile(
     r'^\s*(?P<RD>\S+?)\s*,\s*(?P<RS>\S+?)\s*(,\s*(?P<RT>\S+?))?\s*$')
 __RE_MEM_JMP__ = re.compile(
@@ -219,6 +219,10 @@ def __parse_imm__(operands, is_br=False, pc=None):
         match.group('Immediate'), IMMEDIATE_WIDTH, pc))
 
     for op in (match.group('RS'), match.group('RT')):
+        if not op:
+            result_list.append(None)
+            continue
+
         if op in REGISTERS:
             result_list.append(__zero_extend__(
                 bin(REGISTERS[op]), REGISTER_WIDTH))
@@ -226,7 +230,7 @@ def __parse_imm__(operands, is_br=False, pc=None):
             raise RuntimeError(
                 "Register identifier '{}' is not valid in {}.".format(op, __name__))
 
-    return ''.join(result_list)
+    return tuple(result_list)
 
 
 def __parse_mem_jmp__(operands, pc=None, mem=False):
@@ -394,11 +398,15 @@ class IInstruction(Instruction):
         return 1
 
     @classmethod
+    def build_operands(cls, operands, pc=None):
+        return ''.join(__parse_imm__(operands, pc=pc))
+
+    @classmethod
     def binary(cls, operands, **kwargs):
         opcode = __zero_extend__(bin(cls.opcode()), PRIMARY_OPCODE_WIDTH)
         length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
         opcode = __zero_extend__(opcode, length, pad_right=True)
-        operands = __parse_imm__(operands)
+        operands = cls.build_operands(operands)
         return [opcode + operands]
 
     @classmethod
@@ -413,13 +421,17 @@ class beq(IInstruction):
         return int('001000', 2)
 
     @classmethod
+    def build_operands(cls, operands, pc=None):
+        return ''.join(__parse_imm__(operands, pc=pc))
+
+    @classmethod
     def binary(cls, operands, **kwargs):
         assert('pc' in kwargs)  # Sanity check
 
         opcode = __zero_extend__(bin(cls.opcode()), PRIMARY_OPCODE_WIDTH)
         length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
         opcode = __zero_extend__(opcode, length, pad_right=True)
-        operands = __parse_imm__(operands, pc=kwargs['pc'])
+        operands = cls.build_operands(operands, pc=kwargs['pc'])
         return [opcode + operands]
 
 
@@ -430,13 +442,17 @@ class blt(IInstruction):
         return int('001001', 2)
 
     @classmethod
+    def build_operands(cls, operands, pc=None):
+        return ''.join(__parse_imm__(operands, pc=pc))
+
+    @classmethod
     def binary(cls, operands, **kwargs):
         assert('pc' in kwargs)  # Sanity check
 
         opcode = __zero_extend__(bin(cls.opcode()), PRIMARY_OPCODE_WIDTH)
         length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
         opcode = __zero_extend__(opcode, length, pad_right=True)
-        operands = __parse_imm__(operands, pc=kwargs['pc'])
+        operands = cls.build_operands(operands, pc=kwargs['pc'])
         return [opcode + operands]
 
 
@@ -447,13 +463,17 @@ class ble(IInstruction):
         return int('001010', 2)
 
     @classmethod
+    def build_operands(cls, operands, pc=None):
+        return ''.join(__parse_imm__(operands, pc=pc))
+
+    @classmethod
     def binary(cls, operands, **kwargs):
         assert('pc' in kwargs)  # Sanity check
 
         opcode = __zero_extend__(bin(cls.opcode()), PRIMARY_OPCODE_WIDTH)
         length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
         opcode = __zero_extend__(opcode, length, pad_right=True)
-        operands = __parse_imm__(operands, pc=kwargs['pc'])
+        operands = cls.build_operands(operands, pc=kwargs['pc'])
         return [opcode + operands]
 
 
@@ -464,13 +484,17 @@ class bne(IInstruction):
         return int('001011', 2)
 
     @classmethod
+    def build_operands(cls, operands, pc=None):
+        return ''.join(__parse_imm__(operands, pc=pc))
+
+    @classmethod
     def binary(cls, operands, **kwargs):
         assert('pc' in kwargs)  # Sanity check
 
         opcode = __zero_extend__(bin(cls.opcode()), PRIMARY_OPCODE_WIDTH)
         length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
         opcode = __zero_extend__(opcode, length, pad_right=True)
-        operands = __parse_imm__(operands, pc=kwargs['pc'])
+        operands = cls.build_operands(operands, pc=kwargs['pc'])
         return [opcode + operands]
 
 
@@ -481,13 +505,17 @@ class beq(IInstruction):
         return int('001000', 2)
 
     @classmethod
+    def build_operands(cls, operands, pc=None):
+        return ''.join(__parse_imm__(operands, pc=pc))
+
+    @classmethod
     def binary(cls, operands, **kwargs):
         assert('pc' in kwargs)  # Sanity check
 
         opcode = __zero_extend__(bin(cls.opcode()), PRIMARY_OPCODE_WIDTH)
         length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
         opcode = __zero_extend__(opcode, length, pad_right=True)
-        operands = __parse_imm__(operands, pc=kwargs['pc'])
+        operands = cls.build_operands(operands, pc=kwargs['pc'])
         return [opcode + operands]
 
 
