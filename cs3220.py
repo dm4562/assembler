@@ -124,7 +124,7 @@ def __dec2bin__(num, bits):
 
 def __parse_value__(offset, size, pc=None, jmp=False):
     bin_offset = None
-    print("YOLO: ", SYMBOL_TABLE)
+
     if type(offset) is str:
         if jmp and offset in SYMBOL_TABLE:
             # assert(rs is not None)
@@ -144,7 +144,6 @@ def __parse_value__(offset, size, pc=None, jmp=False):
         elif pc is None and offset in SYMBOL_TABLE:
             offset = SYMBOL_TABLE[offset]
 
-    # assert(type(offset) is int)
     try:
         offset = int(offset)
     except Exception:
@@ -162,7 +161,6 @@ def __parse_value__(offset, size, pc=None, jmp=False):
 
 def __parse_mem_value__(offset, size=IMMEDIATE_WIDTH):
     bin_offset = None
-    print("YOLO: ", SYMBOL_TABLE)
 
     if offset in SYMBOL_TABLE:
         offset = SYMBOL_TABLE[offset]
