@@ -132,23 +132,12 @@ def __parse_value__(offset, size, pc=None, jmp=False):
     bin_offset = None
 
     if type(offset) is str:
-        if offset == 'badstartpc':
-            print('SYM: ', SYMBOL_TABLE[offset])
-            print("PC: ", pc, pc + 4)
         if jmp and offset in SYMBOL_TABLE:
-            # assert(rs is not None)
             offset = SYMBOL_TABLE[offset]
-            # print('Offset1: ', offset)
             offset //= 4
-            # print('Offset2: ', offset)
         elif pc is not None and offset in SYMBOL_TABLE:
-            if offset == 'badstartpc':
-                print('SYM: ', SYMBOL_TABLE[offset])
-                print("PC: ", pc, pc + 4)
             offset = SYMBOL_TABLE[offset] - (pc + 4)
             offset //= 4
-            if offset == 'badstartpc':
-                print('Offset2: ', offset)
         elif offset.startswith('0x'):
             try:
                 offset = int(offset, 16)
