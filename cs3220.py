@@ -44,7 +44,8 @@ SYMBOL_TABLE = {}
 ALIASES = {
     'and': 'and_',
     'or': 'or_',
-    'not': 'not_'
+    'not': 'not_',
+    '.word': 'word'
 }
 
 __R_BLANK_BITS__ = BIT_WIDTH - \
@@ -698,3 +699,23 @@ class jmp(jal):
     def build_operands(cls, operands, pc=None):
         imm, rs, rt = __parse_mem_jmp__(operands, pc)
         return ''.join((imm, rs, __dec2bin__(10, REGISTER_WIDTH)))
+
+
+class word():
+
+    @classmethod
+    def size(cls):
+        return 1
+
+    @classmethod
+    def binary(cls, val, **kwargs):
+        try:
+            val = __parse_value__(val, BIT_WIDTH)
+        except:
+            raise ValueError(
+                "{} could not be resolved as a label or value".format(val))
+        return [val]
+
+    @classmethod
+    def hex(cls, val, **kwargs):
+        return [__bin2hex__(instr) for instr in cls.binary(val, **kwargs)]
