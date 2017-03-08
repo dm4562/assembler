@@ -312,15 +312,31 @@ if __name__ == "__main__":
     print("Writing to {}...".format(outFileName + code_ext), end="")
 
     with open(outFileName + code_ext, 'w') as write_file:
+        mem_size = 2048
+
         write_file.write("WIDTH={};{}".format(ISA.BIT_WIDTH, sep))
-        write_file.write("DEPTH={};{}".format(2048, sep))
+        write_file.write("DEPTH={};{}".format(mem_size, sep))
         write_file.write("ADDRESS_RADIX={};{}".format('HEX', sep))
+        write_file.write("DATA_RADIX={};{}".format('HEX', sep))
         write_file.write("CONTENT BEGIN{}".format(sep))
+
+        pre_mem = -1
         for pc, instr in results:
-            mem_addr = build_hex(pc // ISA.INSTRUCTION_OFFSET, 8)
-            pc = build_hex(pc, 8)
-            write_file.write("-- @ 0x{}{}".format(pc, sep))
-            write_file.write("{} : {};{}".format(mem_addr, instr, sep))
+            mem_addr = pc // ISA.INSTRUCTION_OFFSET
+
+            if pre_mem + 1 != mem_addr:
+                write_file.write("[{}..{}] : {};{}".format(
+                    build_hex(pre_mem + 1, 8), build_hex(mem_addr - 1, 8), 'DEAD', sep))
+
+            write_file.write("-- @ 0x{}{}".format(build_hex(pc, 8), sep))
+            write_file.write("{} : {};{}".format(
+                build_hex(mem_addr, 8), instr, sep))
+            pre_mem = mem_addr
+
+        if pre_mem < mem_size:
+            write_file.write("[{}..{}] : {};{}".format(
+                build_hex(pre_mem + 1, 8), build_hex(mem_size, 8), 'DEAD', sep))
+
         write_file.write("END;")
 
     print('done!')
