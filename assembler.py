@@ -250,8 +250,8 @@ if __name__ == "__main__":
                         help='define the Python ISA module to load [default: isa]')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='enable verbose printing of assembler')
-    parser.add_argument('--hex', '--logisim', action='store_true',
-                        help='assemble code into hexadecimal (Logisim-compatible)')
+    parser.add_argument('--bin', '--logisim', action='store_true', default=False,
+                        help='assemble code into binary (Not compatible with .mif format)')
     parser.add_argument('-s', '--separator', required=False, type=separator, default='\\n',
                         help='the separator to use between instructions (accepts \s for space and standard escape characters) [default: \\n]')
     parser.add_argument('--sym', '--symbols', action='store_true',
@@ -286,13 +286,13 @@ if __name__ == "__main__":
             print("Assemble failed.\n")
             exit(1)
 
-        success, results = pass2(read_file, args.hex)
+        success, results = pass2(read_file, not args.bin)
         if not success:
             print("Assemble failed.\n")
             exit(1)
 
     outFileName = os.path.splitext(args.asmfile)[0]
-    code_ext = '.mif' if args.hex else '.bin'
+    code_ext = '.bin' if args.bin else '.mif'
     sep = args.separator
 
     if args.sym:
@@ -313,11 +313,11 @@ if __name__ == "__main__":
 
     with open(outFileName + code_ext, 'w') as write_file:
         mem_size = 2048
-
+        data_radix = 'BIN' if args.bin else 'HEX'
         write_file.write("WIDTH={};{}".format(ISA.BIT_WIDTH, sep))
         write_file.write("DEPTH={};{}".format(mem_size, sep))
         write_file.write("ADDRESS_RADIX={};{}".format('HEX', sep))
-        write_file.write("DATA_RADIX={};{}".format('HEX', sep))
+        write_file.write("DATA_RADIX={};{}".format(data_radix, sep))
         write_file.write("CONTENT BEGIN{}".format(sep))
 
         pre_mem = -1
