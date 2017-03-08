@@ -128,11 +128,23 @@ def __parse_value__(offset, size, pc=None, jmp=False):
     bin_offset = None
 
     if type(offset) is str:
+        if offset == 'badstartpc':
+            print('SYM: ', SYMBOL_TABLE[offset])
+            print("PC: ", pc, pc + 4)
         if jmp and offset in SYMBOL_TABLE:
             # assert(rs is not None)
             offset = SYMBOL_TABLE[offset]
+            # print('Offset1: ', offset)
+            offset //= BYTE_WIDTH
+            # print('Offset2: ', offset)
         elif pc is not None and offset in SYMBOL_TABLE:
-            offset = SYMBOL_TABLE[offset] - (pc + 1)
+            if offset == 'badstartpc':
+                print('SYM: ', SYMBOL_TABLE[offset])
+                print("PC: ", pc, pc + 4)
+            offset = SYMBOL_TABLE[offset] - (pc + (1 * BYTE_WIDTH))
+            offset //= BYTE_WIDTH
+            if offset == 'badstartpc':
+                print('Offset2: ', offset)
         elif offset.startswith('0x'):
             try:
                 offset = int(offset, 16)
@@ -148,6 +160,7 @@ def __parse_value__(offset, size, pc=None, jmp=False):
 
     try:
         offset = int(offset)
+        # print("OFFSET#", offset)
     except Exception:
         if pc is not None:
             raise RuntimeError(
@@ -287,7 +300,7 @@ class RInstruction(Instruction):
         raise NotImplementedError()
 
     @classmethod
-    def build_operands(cls, operands):
+    def build_operands(cls, operands, **kwargs):
         return ''.join(__parse_r__(operands))
 
     @classmethod
@@ -414,8 +427,8 @@ class IInstruction(Instruction):
         return 1 * BYTE_WIDTH
 
     @classmethod
-    def build_operands(cls, operands, pc=None):
-        return ''.join(__parse_imm__(operands, pc=pc))
+    def build_operands(cls, operands, **kwargs):
+        return ''.join(__parse_imm__(operands))
 
     @classmethod
     def binary(cls, operands, **kwargs):
@@ -437,8 +450,9 @@ class beq(IInstruction):
         return int('001000', 2)
 
     @classmethod
-    def build_operands(cls, operands, pc=None):
-        return ''.join(__parse_imm__(operands, pc=pc))
+    def build_operands(cls, operands, **kwargs):
+        assert('pc' in kwargs)
+        return ''.join(__parse_imm__(operands, pc=kwargs['pc']))
 
     @classmethod
     def binary(cls, operands, **kwargs):
@@ -447,7 +461,7 @@ class beq(IInstruction):
         opcode = __zero_extend__(bin(cls.opcode()), PRIMARY_OPCODE_WIDTH)
         length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
         opcode = __zero_extend__(opcode, length, pad_right=True)
-        operands = cls.build_operands(operands, pc=kwargs['pc'])
+        operands = cls.build_operands(operands, **kwargs)
         return [opcode + operands]
 
 
@@ -458,8 +472,9 @@ class blt(IInstruction):
         return int('001001', 2)
 
     @classmethod
-    def build_operands(cls, operands, pc=None):
-        return ''.join(__parse_imm__(operands, pc=pc))
+    def build_operands(cls, operands, **kwargs):
+        assert('pc' in kwargs)
+        return ''.join(__parse_imm__(operands, pc=kwargs['pc']))
 
     @classmethod
     def binary(cls, operands, **kwargs):
@@ -468,7 +483,7 @@ class blt(IInstruction):
         opcode = __zero_extend__(bin(cls.opcode()), PRIMARY_OPCODE_WIDTH)
         length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
         opcode = __zero_extend__(opcode, length, pad_right=True)
-        operands = cls.build_operands(operands, pc=kwargs['pc'])
+        operands = cls.build_operands(operands, **kwargs)
         return [opcode + operands]
 
 
@@ -479,8 +494,9 @@ class ble(IInstruction):
         return int('001010', 2)
 
     @classmethod
-    def build_operands(cls, operands, pc=None):
-        return ''.join(__parse_imm__(operands, pc=pc))
+    def build_operands(cls, operands, **kwargs):
+        assert('pc' in kwargs)
+        return ''.join(__parse_imm__(operands, pc=kwargs['pc']))
 
     @classmethod
     def binary(cls, operands, **kwargs):
@@ -489,7 +505,7 @@ class ble(IInstruction):
         opcode = __zero_extend__(bin(cls.opcode()), PRIMARY_OPCODE_WIDTH)
         length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
         opcode = __zero_extend__(opcode, length, pad_right=True)
-        operands = cls.build_operands(operands, pc=kwargs['pc'])
+        operands = cls.build_operands(operands, **kwargs)
         return [opcode + operands]
 
 
@@ -500,8 +516,9 @@ class bne(IInstruction):
         return int('001011', 2)
 
     @classmethod
-    def build_operands(cls, operands, pc=None):
-        return ''.join(__parse_imm__(operands, pc=pc))
+    def build_operands(cls, operands, **kwargs):
+        assert('pc' in kwargs)
+        return ''.join(__parse_imm__(operands, pc=kwargs['pc']))
 
     @classmethod
     def binary(cls, operands, **kwargs):
@@ -510,7 +527,7 @@ class bne(IInstruction):
         opcode = __zero_extend__(bin(cls.opcode()), PRIMARY_OPCODE_WIDTH)
         length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
         opcode = __zero_extend__(opcode, length, pad_right=True)
-        operands = cls.build_operands(operands, pc=kwargs['pc'])
+        operands = cls.build_operands(operands, **kwargs)
         return [opcode + operands]
 
 
@@ -521,8 +538,9 @@ class beq(IInstruction):
         return int('001000', 2)
 
     @classmethod
-    def build_operands(cls, operands, pc=None):
-        return ''.join(__parse_imm__(operands, pc=pc))
+    def build_operands(cls, operands, **kwargs):
+        assert('pc' in kwargs)
+        return ''.join(__parse_imm__(operands, pc=kwargs['pc']))
 
     @classmethod
     def binary(cls, operands, **kwargs):
@@ -531,7 +549,7 @@ class beq(IInstruction):
         opcode = __zero_extend__(bin(cls.opcode()), PRIMARY_OPCODE_WIDTH)
         length = PRIMARY_OPCODE_WIDTH + __IMM_BLANK_BITS__
         opcode = __zero_extend__(opcode, length, pad_right=True)
-        operands = cls.build_operands(operands, pc=kwargs['pc'])
+        operands = cls.build_operands(operands, **kwargs)
         return [opcode + operands]
 
 
@@ -644,16 +662,18 @@ class gt(lt):
 class bgt(blt):
 
     @classmethod
-    def build_operands(cls, operands, pc=None):
-        imm, rd, rs = __parse_imm__(operands)
+    def build_operands(cls, operands, **kwargs):
+        assert('pc' in kwargs)
+        imm, rd, rs = __parse_imm__(operands, pc=kwargs['pc'])
         return ''.join((imm, rs, rd))
 
 
 class bge(ble):
 
     @classmethod
-    def build_operands(cls, operands, pc=None):
-        imm, rd, rs = __parse_imm__(operands)
+    def build_operands(cls, operands, **kwargs):
+        assert('pc' in kwargs)
+        imm, rd, rs = __parse_imm__(operands, pc=kwargs['pc'])
         return ''.join((imm, rs, rd))
 
 
@@ -669,9 +689,15 @@ class subi(addi):
 class br(beq):
 
     @classmethod
-    def build_operands(cls, operands, pc=None):
-        imm, rd, rs = __parse_imm__(operands)
-        return ''.join((imm, '0000', '0000'))
+    def build_operands(cls, operands, **kwargs):
+        assert('pc' in kwargs)
+        imm, rd, rs = __parse_imm__(operands, pc=kwargs['pc'])
+        l = [
+            imm,
+            __dec2bin__(REGISTERS['zero'], REGISTER_WIDTH),
+            __dec2bin__(REGISTERS['zero'], REGISTER_WIDTH)
+        ]
+        return ''.join((l))
 
 
 class ret(jal):
