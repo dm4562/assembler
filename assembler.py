@@ -99,9 +99,9 @@ def pass1(file):
 
         if keyword == 'word':
             try:
-                pc += (getattr(ISA, ISA.instruction_class(op)).size()
+                pc += (getattr(ISA, ISA.instruction_class(keyword)).size()
                        * ISA.INSTRUCTION_OFFSET)
-            except:
+            except Exception as e:
                 error(
                     line_count, "instruction '{}' is not defined in the current ISA".format(keyword))
                 no_errors = False
@@ -109,7 +109,7 @@ def pass1(file):
             try:
                 pc += (getattr(ISA, ISA.instruction_class(op)).size()
                        * ISA.INSTRUCTION_OFFSET)
-            except:
+            except Exception as e:
                 error(
                     line_count, "instruction '{}' is not defined in the current ISA".format(op))
                 no_errors = False
@@ -292,7 +292,7 @@ if __name__ == "__main__":
             exit(1)
 
     outFileName = os.path.splitext(args.asmfile)[0]
-    code_ext = '.hex' if args.hex else '.bin'
+    code_ext = '.mif' if args.hex else '.bin'
     sep = args.separator
 
     if args.sym:
