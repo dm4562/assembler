@@ -34,9 +34,6 @@ def pass1(file):
     line_count = 1
     no_errors = True
 
-    # Seek to beginning of file
-    # f.seek(0)
-
     for line in file:
         # Skip blank lines and comments
         if ISA.is_blank(line):
@@ -102,14 +99,16 @@ def pass1(file):
 
         if keyword == 'word':
             try:
-                pc += getattr(ISA, ISA.instruction_class(keyword)).size()
+                pc += (getattr(ISA, ISA.instruction_class(op)).size()
+                       * ISA.INSTRUCTION_OFFSET)
             except:
                 error(
                     line_count, "instruction '{}' is not defined in the current ISA".format(keyword))
                 no_errors = False
         if op:
             try:
-                pc += getattr(ISA, ISA.instruction_class(op)).size()
+                pc += (getattr(ISA, ISA.instruction_class(op)).size()
+                       * ISA.INSTRUCTION_OFFSET)
             except:
                 error(
                     line_count, "instruction '{}' is not defined in the current ISA".format(op))
@@ -122,7 +121,7 @@ def pass1(file):
     return no_errors
 
 
-def pass2(input_file, use_hex, write_pc=True):
+def pass2(input_file, use_hex):
     verbose("\nBeginning Pass 2...\n")
 
     pc = 0
@@ -182,20 +181,17 @@ def pass2(input_file, use_hex, write_pc=True):
 
             try:
                 if use_hex:
-                    assembled = instr.hex(val, pc=op, instruction=keyword)
+                    assembled = instr.hex(val, pc=pc, instruction=keyword)
                 else:
-                    assembled = instr.binary(val, pc=op, instruction=keyword)
+                    assembled = instr.binary(val, pc=pc, instruction=keyword)
             except Exception as e:
                 error(line_count, str(e))
                 success = False
 
             if assembled:
-                if write_pc:
-                    results.extend([(pc + i, instr)
-                                    for i, instr in enumerate(assembled)])
-                else:
-                    results.extend(assembled)
-                pc += instr.size()
+                results.extend([(pc + (i * ISA.INSTRUCTION_OFFSET), instr)
+                                for i, instr in enumerate(assembled)])
+                pc += (instr.size() * ISA.INSTRUCTION_OFFSET)
 
         elif op:
             instr = getattr(ISA, ISA.instruction_class(op))
@@ -206,17 +202,13 @@ def pass2(input_file, use_hex, write_pc=True):
                 else:
                     assembled = instr.binary(operands, pc=pc, instruction=op)
             except Exception as e:
-                # print(traceback.format_exc())
                 error(line_count, str(e))
                 success = False
 
             if assembled:
-                if write_pc:
-                    results.extend([(pc + i, instr)
-                                    for i, instr in enumerate(assembled)])
-                else:
-                    results.extend(assembled)
-                pc += instr.size()
+                results.extend([(pc + (i * ISA.INSTRUCTION_OFFSET), instr)
+                                for i, instr in enumerate(assembled)])
+                pc += (instr.size() * ISA.INSTRUCTION_OFFSET)
 
         line_count += 1
 
@@ -244,6 +236,10 @@ def parse_params(values):
         parsed[m.group('key')] = m.group('value')
 
     return parsed
+
+
+def build_hex(number, width):
+    return "{0:0{1}X}".format(number, width)
 
 if __name__ == "__main__":
     # Parse arguments
@@ -316,7 +312,15 @@ if __name__ == "__main__":
     print("Writing to {}...".format(outFileName + code_ext), end="")
 
     with open(outFileName + code_ext, 'w') as write_file:
-        for mem, instr in results:
-            write_file.write("{}: {}{}".format(hex(mem)[2:], instr, sep))
+        write_file.write("WIDTH={};{}".format(ISA.BIT_WIDTH, sep))
+        write_file.write("DEPTH={};{}".format(2048, sep))
+        write_file.write("ADDRESS_RADIX={};{}".format('HEX', sep))
+        write_file.write("CONTENT BEGIN{}".format(sep))
+        for pc, instr in results:
+            mem_addr = build_hex(pc // ISA.INSTRUCTION_OFFSET, 8)
+            pc = build_hex(pc, 8)
+            write_file.write("-- @ 0x{}{}".format(pc, sep))
+            write_file.write("{} : {};{}".format(mem_addr, instr, sep))
+        write_file.write("END;")
 
     print('done!')
