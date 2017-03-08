@@ -9,6 +9,7 @@ __name__ = 'CS-3220'
 
 # Overall architecture width (bits)
 BIT_WIDTH = 32
+BYTE_WIDTH = BIT_WIDTH // 8
 
 # Primary opcode width (bits)
 PRIMARY_OPCODE_WIDTH = 6
@@ -275,7 +276,7 @@ class RInstruction(Instruction):
 
     @classmethod
     def size(cls):
-        return 1
+        return 1 * BYTE_WIDTH
 
     @classmethod
     def primary_opcode(cls):
@@ -410,7 +411,7 @@ class IInstruction(Instruction):
 
     @classmethod
     def size(cls):
-        return 1
+        return 1 * BYTE_WIDTH
 
     @classmethod
     def build_operands(cls, operands, pc=None):
@@ -705,7 +706,7 @@ class word():
 
     @classmethod
     def size(cls):
-        return 1
+        return 1 * BYTE_WIDTH
 
     @classmethod
     def binary(cls, val, **kwargs):
