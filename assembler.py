@@ -9,7 +9,7 @@ import re
 import traceback
 
 """assembler.py: General, modular 2-pass assembler accepting ISA definitions to assemble code."""
-__author__ = "Christopher Tam"
+__authors__ = "Christopher Tam and Dhruv Mehra"
 
 
 VERBOSE = False
@@ -53,6 +53,25 @@ def pass1(file):
 
         # Parse line
         keyword, key, val, label, op, _ = ISA.get_parts(line)
+
+        if keyword == 'orig':
+            # Sanity check
+            if not val:
+                error(line_count, "{} is not valid format for {}".format(keyword, val))
+                success = False
+
+            try:
+                if val.startswith('0x'):
+                    pc = int(val, 16)
+                elif val.startswith('0b'):
+                    pc = int(val, 2)
+                else:
+                    pc = int(val)
+
+            except ValueError as e:
+                error(line_count, "{} is not a valid number format".format(val))
+                no_errors = False
+
         if label:
             if label in ISA.SYMBOL_TABLE:
                 error(line_count, "label '{}' is defined more than once".format(label))
@@ -82,7 +101,7 @@ def pass1(file):
     return no_errors
 
 
-def pass2(input_file, use_hex):
+def pass2(input_file, use_hex, write_pc=True):
     verbose("\nBeginning Pass 2...\n")
 
     pc = 0
@@ -107,9 +126,57 @@ def pass2(input_file, use_hex):
         # Make line case-insensitive
         line = line.lower()
 
-        _, _, _, _, op, operands = ISA.get_parts(line)
+        keyword, key, val, _, op, operands = ISA.get_parts(line)
 
-        if op:
+        if keyword and op:
+            error(line_number,
+                  "Cannot have {} and {} in the same line".format(op, keyword))
+            success = False
+
+        if keyword == 'orig':
+            # Sanity check
+            if not val:
+                error(line_count, "{} is not valid format for {}".format(keyword, val))
+                success = False
+
+            try:
+                if val.startswith('0x'):
+                    pc = int(val, 16)
+                elif val.startswith('0b'):
+                    pc = int(val, 2)
+                else:
+                    pc = int(val)
+
+            except ValueError as e:
+                error(line_count, "{} is not a valid number format".format(val))
+                success = False
+
+        if keyword == 'word':
+            instr = getattr(ISA, ISA.instruction_class(keyword))
+            assembled = None
+
+            if not val:
+                error(line_count, "{} is not valid format for {}".format(keyword, val))
+                success = False
+
+            try:
+                if use_hex:
+                    assembled = instr.hex(val, pc=op, instruction=keyword)
+                else:
+                    assembled = instr.binary(val, pc=op, instruction=keyword)
+            except Exception as e:
+                error(line_count, str(e))
+                success = False
+
+            if assembled:
+                if write_pc:
+                    results.extend([(pc + i, instr)
+                                    for i, instr in enumerate(assembled)])
+                else:
+                    results.extend(assembled)
+                pc += instr.size()
+
+        elif op:
             instr = getattr(ISA, ISA.instruction_class(op))
             assembled = None
             try:
@@ -118,12 +185,16 @@ def pass2(input_file, use_hex):
                 else:
                     assembled = instr.binary(operands, pc=pc, instruction=op)
             except Exception as e:
-                print(traceback.format_exc())
+                # print(traceback.format_exc())
                 error(line_count, str(e))
                 success = False
 
             if assembled:
-                results.extend(assembled)
+                if write_pc:
+                    results.extend([(pc + i, instr)
+                                    for i, instr in enumerate(assembled)])
+                else:
+                    results.extend(assembled)
                 pc += instr.size()
 
         line_count += 1
@@ -224,7 +295,7 @@ if __name__ == "__main__":
     print("Writing to {}...".format(outFileName + code_ext), end="")
 
     with open(outFileName + code_ext, 'w') as write_file:
-        for r in results:
-            write_file.write(r + sep)
+        for mem, instr in results:
+            write_file.write("{}: {}{}".format(hex(mem)[2:], instr, sep))
 
     print('done!')
