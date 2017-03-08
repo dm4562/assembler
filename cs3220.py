@@ -9,7 +9,6 @@ __name__ = 'CS-3220'
 
 # Overall architecture width (bits)
 BIT_WIDTH = 32
-BYTE_WIDTH = BIT_WIDTH // 8
 
 # Primary opcode width (bits)
 PRIMARY_OPCODE_WIDTH = 6
@@ -22,6 +21,12 @@ REGISTER_WIDTH = 4
 
 # Immediate value width
 IMMEDIATE_WIDTH = BIT_WIDTH - PRIMARY_OPCODE_WIDTH - 2 - (2 * REGISTER_WIDTH)
+
+# Offset size according to addressibility
+OFFSET_WIDTH = 8
+
+# Number of Offsets for each instruction
+INSTRUCTION_OFFSET = BIT_WIDTH // OFFSET_WIDTH
 
 REGISTERS = {
     'zero':   0,
@@ -46,7 +51,6 @@ ALIASES = {
     'and': 'and_',
     'or': 'or_',
     'not': 'not_',
-    '.word': 'word'
 }
 
 __R_BLANK_BITS__ = BIT_WIDTH - \
@@ -135,14 +139,14 @@ def __parse_value__(offset, size, pc=None, jmp=False):
             # assert(rs is not None)
             offset = SYMBOL_TABLE[offset]
             # print('Offset1: ', offset)
-            offset //= BYTE_WIDTH
+            offset //= 4
             # print('Offset2: ', offset)
         elif pc is not None and offset in SYMBOL_TABLE:
             if offset == 'badstartpc':
                 print('SYM: ', SYMBOL_TABLE[offset])
                 print("PC: ", pc, pc + 4)
-            offset = SYMBOL_TABLE[offset] - (pc + (1 * BYTE_WIDTH))
-            offset //= BYTE_WIDTH
+            offset = SYMBOL_TABLE[offset] - (pc + 4)
+            offset //= 4
             if offset == 'badstartpc':
                 print('Offset2: ', offset)
         elif offset.startswith('0x'):
@@ -289,7 +293,7 @@ class RInstruction(Instruction):
 
     @classmethod
     def size(cls):
-        return 1 * BYTE_WIDTH
+        return 1
 
     @classmethod
     def primary_opcode(cls):
@@ -424,7 +428,7 @@ class IInstruction(Instruction):
 
     @classmethod
     def size(cls):
-        return 1 * BYTE_WIDTH
+        return 1
 
     @classmethod
     def build_operands(cls, operands, **kwargs):
@@ -732,7 +736,7 @@ class word():
 
     @classmethod
     def size(cls):
-        return 1 * BYTE_WIDTH
+        return 1
 
     @classmethod
     def binary(cls, val, **kwargs):
