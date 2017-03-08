@@ -54,6 +54,11 @@ def pass1(file):
         # Parse line
         keyword, key, val, label, op, _ = ISA.get_parts(line)
 
+        if keyword and op:
+            error(line_number,
+                  "Cannot have {} and {} in the same line".format(op, keyword))
+            success = False
+
         if keyword == 'orig':
             # Sanity check
             if not val:
@@ -84,8 +89,24 @@ def pass1(file):
                 error(line_count, "label '{}' is defined more than once".format(key))
                 no_errors = False
             else:
-                ISA.SYMBOL_TABLE[key] = int(val, 16)
+                try:
+                    if val.startswith('0x'):
+                        ISA.SYMBOL_TABLE[key] = int(val, 16)
+                    elif val.startswith('0b'):
+                        ISA.SYMBOL_TABLE[key] = int(val, 2)
+                    else:
+                        ISA.SYMBOL_TABLE[key] = int(val)
+                except ValueError as e:
+                    error(line_count, "{} is not a valid number format".format(val))
+                    no_errors = False
 
+        if keyword == 'word':
+            try:
+                pc += getattr(ISA, ISA.instruction_class(keyword)).size()
+            except:
+                error(
+                    line_count, "instruction '{}' is not defined in the current ISA".format(keyword))
+                no_errors = False
         if op:
             try:
                 pc += getattr(ISA, ISA.instruction_class(op)).size()
