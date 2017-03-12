@@ -317,6 +317,7 @@ if __name__ == "__main__":
         mem_size = 2048
         if args.memory:
             mem_size = args.memory
+        altera_size = 16384
 
         data_radix = 'BIN' if args.bin else 'HEX'
         write_file.write("WIDTH={};{}".format(ISA.BIT_WIDTH, sep))
@@ -339,11 +340,11 @@ if __name__ == "__main__":
             pre_mem = mem_addr
 
         if pre_mem >= mem_size:
-            error(-1, "Memory limit exceeded, increase mem_size in the assembler!")
+            error(-1, "Memory limit exceeded! Cannot be uploaded to ALTERA Cyclone V")
 
         if pre_mem < mem_size:
             write_file.write("[{}..{}] : {};{}".format(
-                build_hex(pre_mem + 1, 8), build_hex(mem_size - 1, 8), 'DEAD', sep))
+                build_hex(pre_mem + 1, 8), build_hex(altera_size - 1, 8), 'DEAD', sep))
 
         write_file.write("END;")
 
