@@ -248,6 +248,8 @@ if __name__ == "__main__":
     parser.add_argument('asmfile', help='the .s file to be assembled')
     parser.add_argument('-i', '--isa', required=False, type=str, default='isa',
                         help='define the Python ISA module to load [default: isa]')
+    parser.add_argument('-m', '--memory', required=False, type=int, default=2048,
+                        help='define the memory size of the assmembler. Default = 2048')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='enable verbose printing of assembler')
     parser.add_argument('--bin', '--logisim', action='store_true', default=False,
@@ -313,6 +315,9 @@ if __name__ == "__main__":
 
     with open(outFileName + code_ext, 'w') as write_file:
         mem_size = 2048
+        if args.memory:
+            mem_size = args.memory
+
         data_radix = 'BIN' if args.bin else 'HEX'
         write_file.write("WIDTH={};{}".format(ISA.BIT_WIDTH, sep))
         write_file.write("DEPTH={};{}".format(mem_size, sep))
@@ -333,9 +338,12 @@ if __name__ == "__main__":
                 build_hex(mem_addr, 8), instr, sep))
             pre_mem = mem_addr
 
+        if pre_mem >= mem_size:
+            error(-1, "Memory limit exceeded, increase mem_size in the assembler!")
+
         if pre_mem < mem_size:
             write_file.write("[{}..{}] : {};{}".format(
-                build_hex(pre_mem + 1, 8), build_hex(mem_size, 8), 'DEAD', sep))
+                build_hex(pre_mem + 1, 8), build_hex(mem_size - 1, 8), 'DEAD', sep))
 
         write_file.write("END;")
 
