@@ -47,4 +47,4 @@ subi zero, zero, 1
 ret
 call 0b10(zero)
 jmp JalTarg(zero)
-;011010 01 111 0000 0010 0000 0000 0101 sw t0, LEDR(zero)
+

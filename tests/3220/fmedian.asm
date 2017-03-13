@@ -85,7 +85,7 @@ DoneSorting:
 ShowMedian:
 	ADDI	Zero,A0,Array
 	LW		A1,ArrayBytesVal(Zero)			; A1 size of the array
-	ADDI	Zero,T0,3
+	ADDI	Zero,T0,1
 	RSHF	A1,A1,T0										; A1 now is divided by eight (*4 each element size, *2 to find element)
 	ADD   A1,A1,	A0
 	LW		T0,0(A1)
