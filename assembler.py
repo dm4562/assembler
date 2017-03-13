@@ -246,8 +246,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         'assembler.py', description='Assembles generic ISA-defined assembly code into hex or binary.')
     parser.add_argument('asmfile', help='the .s file to be assembled')
-    parser.add_argument('-i', '--isa', required=False, type=str, default='isa',
-                        help='define the Python ISA module to load [default: isa]')
+    parser.add_argument('-i', '--isa', required=False, type=str, default='cs3220',
+                        help='define the Python ISA module to load [default: cs3220]')
     parser.add_argument('-m', '--memory', required=False, type=int, default=16384,
                         help='define the memory size of the assmembler. Default = 2048')
     parser.add_argument('-v', '--verbose', action='store_true',
