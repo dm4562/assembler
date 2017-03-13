@@ -19,7 +19,7 @@ usage: Assembles generic ISA-defined assembly code into hex or binary.
        asmfile
 
 positional arguments:
-  asmfile               the .s file to be assembled
+  asmfile               the .asm file to be assembled
 
 optional arguments:
   -h, --help            show this help message and exit
