@@ -314,7 +314,7 @@ if __name__ == "__main__":
     print("Writing to {}...".format(outFileName + code_ext), end="")
 
     with open(outFileName + code_ext, 'w') as write_file:
-        mem_size = 2048
+        mem_size = 16384
         if args.memory:
             mem_size = args.memory
         altera_size = 16384
