@@ -252,7 +252,7 @@ if __name__ == "__main__":
                         help='define the memory size of the assmembler. Default = 2048')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='enable verbose printing of assembler')
-    parser.add_argument('--bin', '--logisim', action='store_true', default=False,
+    parser.add_argument('-b', '--bin', action='store_true', default=False,
                         help='assemble code into binary (Not compatible with .mif format)')
     parser.add_argument('-s', '--separator', required=False, type=separator, default='\\n',
                         help='the separator to use between instructions (accepts \s for space and standard escape characters) [default: \\n]')
