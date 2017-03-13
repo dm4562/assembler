@@ -699,8 +699,8 @@ class ret(jal):
     def build_operands(cls, operands, pc=None):
         l = [
             __zero_extend__('0', IMMEDIATE_WIDTH),
-            __dec2bin__(10, REGISTER_WIDTH),
-            __dec2bin__(REGISTERS['ra'], REGISTER_WIDTH)
+            __dec2bin__(REGISTERS['ra'], REGISTER_WIDTH),
+            __dec2bin__(10, REGISTER_WIDTH)
         ]
         return ''.join(l)
 
