@@ -7,6 +7,7 @@ The assembler runs on any version of Python 2.6+.  An instruction set architectu
 ## Sample Definitions
 * [LC-2200 (32-bit)](lc2200.py)
 * [LC3-2200a (32-bit)](lc32200a.py)
+* [CS-3220 (32-bit)](cs3220.py)
 
 ## Options
 The assembler contains multiple options.
@@ -14,7 +15,7 @@ The assembler contains multiple options.
 `python assembler.py -h` prints:
 ```
 usage: Assembles generic ISA-defined assembly code into hex or binary.
-       [-h] [-i ISA] [-v] [--hex] [-s SEPARATOR] [--sym] [--params PARAMS]
+       [-h] [-i ISA] [-v] [--bin] [-s SEPARATOR] [--sym] [--params PARAMS]
        asmfile
 
 positional arguments:
@@ -22,9 +23,9 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -i ISA, --isa ISA     define the Python ISA module to load [default: isa]
+  -i ISA, --isa ISA     define the Python ISA module to load [default: cs3220]
   -v, --verbose         enable verbose printing of assembler
-  --hex, --logisim      assemble code into hexadecimal (Logisim-compatible)
+  --bin, --logisim      assemble code into hexadecimal (Logisim-compatible)
   -s SEPARATOR, --separator SEPARATOR
                         the separator to use between instructions (accepts \s
                         for space and standard escape characters) [default:
