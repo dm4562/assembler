@@ -15,7 +15,7 @@ The assembler contains multiple options.
 `python assembler.py -h` prints:
 ```
 usage: Assembles generic ISA-defined assembly code into hex or binary.
-       [-h] [-i ISA] [-v] [--bin] [-s SEPARATOR] [--sym] [--params PARAMS]
+       [-h] [-i ISA] [-v] [-b] [-s SEPARATOR] [--sym] [--params PARAMS]
        asmfile
 
 positional arguments:
@@ -25,7 +25,7 @@ optional arguments:
   -h, --help            show this help message and exit
   -i ISA, --isa ISA     define the Python ISA module to load [default: cs3220]
   -v, --verbose         enable verbose printing of assembler
-  --bin, --logisim      assemble code into hexadecimal (Logisim-compatible)
+  --b, --bin            assemble code into binary (Quartus compatible)
   -s SEPARATOR, --separator SEPARATOR
                         the separator to use between instructions (accepts \s
                         for space and standard escape characters) [default:
