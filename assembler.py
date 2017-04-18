@@ -260,6 +260,8 @@ if __name__ == "__main__":
                         help="output an additional file containing the assembled program's symbol table")
     parser.add_argument('--params', required=False, type=str,
                         help='custom parameters to pass to an architecture, formatted as "key1=value1, key2=value2, key3=value3"')
+    parser.add_argument('-ms', '--model-sim', required=False, type=bool,
+                        default=False, help='Generate the hex file for model sim')
     args = parser.parse_args()
 
     # Try to dynamically load ISA module
